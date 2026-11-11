@@ -1,0 +1,16 @@
+{
+  "code": "xx",
+  "name": "Nombre del idioma",
+  "strings": {
+    "Perfiles": "Profiles",
+    "Estado": "Status",
+    "Consola": "Console",
+    "Configuracion del Servidor": "Server Configuration",
+    "Configuracion App": "App Configuration",
+    "Temas": "Themes",
+    "Backup en la nube": "Cloud backup",
+    "Idioma": "Language",
+    "REGRESAR": "GO BACK",
+    "APLICAR IDIOMA": "APPLY LANGUAGE"
+  }
+}

@@ -1,0 +1,21 @@
+# Salida de compilacion
+bin/
+obj/
+dist/
+
+# Visual Studio / VS Code
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Archivos temporales
+*.pdb
+*.log
+*.tmp
+Thumbs.db
+desktop.ini
+
+# Configuracion local de la app
+config.json

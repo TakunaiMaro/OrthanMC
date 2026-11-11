@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>assets\logo-Orthanc.ico</ApplicationIcon>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>$(NoWarn);CS8618;CS8600;CS8602;CS8604;CS8622;CS8625;CS0649;CS0169;CS0414;WFAC010</NoWarn>
+
+    <!-- Version que se muestra y se compara en el sistema de actualizaciones.
+         Subirla en cada release y crear el tag vX.Y.Z en GitHub. -->
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Product>Orthanc Mc</Product>
+    <Company>TakunaiMaro</Company>
+    <Description>Panel de administracion para servidores locales de Minecraft con Playit.</Description>
+    <RepositoryUrl>https://github.com/TakunaiMaro/OrthanMC</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="src\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="themes\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="languages\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="assets\logo-Orthanc.ico" Link="logo-Orthanc.ico" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="assets\logo-Orthanc-136.ico" Link="logo-Orthanc-136.ico" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="assets\logo-Orthanc-136.png" Link="logo-Orthanc-136.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="assets\logo-Orthanc-800.png" Link="logo-Orthanc-800.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

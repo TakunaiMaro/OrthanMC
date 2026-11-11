@@ -1,0 +1,30 @@
+ORTHANC MC - IDIOMAS
+====================
+
+Cada archivo .json de esta carpeta es un idioma editable.
+
+Formato:
+{
+  "code": "en",
+  "name": "English",
+  "strings": {
+    "Texto en espanol": "Translation",
+    "...": "..."
+  }
+}
+
+- "code" es un identificador corto y unico (por ejemplo: en, es, pt, fr).
+- "name" es el nombre que aparece en la lista de idiomas.
+- "strings" contiene las traducciones. La clave siempre es el texto base
+  en espanol que usa la aplicacion; el valor es el texto en el idioma.
+- Si una clave no existe, la aplicacion muestra el texto en espanol.
+- El nombre de la aplicacion (Orthanc Mc) no se traduce nunca.
+
+Para agregar un idioma:
+1. Copia plantilla.json.example y renombralo, por ejemplo, a pt.json.
+2. Cambia code, name y las traducciones.
+3. En la app abre Configuracion App > Idioma y pulsa AGREGAR IDIOMA,
+   o reinicia la aplicacion. El archivo tambien se puede copiar a mano
+   en esta carpeta.
+
+Los archivos deben guardarse en UTF-8.
