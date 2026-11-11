@@ -14,8 +14,14 @@ dist/
 *.pdb
 *.log
 *.tmp
+*.bak
+*.swp
 Thumbs.db
 desktop.ini
+
+# Ejecutables sueltos (los paquetes van en dist/)
+*.exe
+*.dll
 
 # Configuracion local de la app
 config.json

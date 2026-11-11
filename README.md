@@ -9,6 +9,9 @@ servidor, la consola, los jugadores, las copias de seguridad, las versiones de
 
 > Proyecto no oficial. No esta afiliado ni respaldado por Mojang Studios.
 
+El proyecto esta desarrollado principalmente en espanol; la interfaz incluye
+espanol e ingles.
+
 ## Caracteristicas
 
 - **Perfiles**: varios servidores en una misma instalacion, con portada, horas
@@ -34,7 +37,8 @@ servidor, la consola, los jugadores, las copias de seguridad, las versiones de
 ## Requisitos
 
 - Windows 10 u 11 de 64 bits.
-- Java instalado para ejecutar servidores de Minecraft.
+- Java instalado para ejecutar servidores de Minecraft (el asistente inicial
+  puede instalarlo por ti).
 - Si usas el paquete *self-contained*, no necesitas instalar .NET.
   Si usas el paquete *framework-dependent*, necesitas
   [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).
@@ -43,10 +47,14 @@ servidor, la consola, los jugadores, las copias de seguridad, las versiones de
 
 1. Descarga el ultimo `OrthancMC-vX.Y.Z-win-x64.zip` desde
    [Releases](https://github.com/TakunaiMaro/OrthanMC/releases).
-2. Descomprime la carpeta en una ubicacion fija.
+2. Descomprime la carpeta en una ubicacion fija (por ejemplo
+   `C:\Servers\OrthancMC`).
 3. Ejecuta `McPanel.exe`.
-4. La primera vez se abre el asistente para elegir la carpeta del servidor y
-   el nick de administrador.
+4. La primera vez se abre el asistente, que:
+   - pregunta si ya tienes archivos del servidor o si quieres una instalacion
+     limpia;
+   - ofrece instalar el Java necesario para arrancar el servidor;
+   - pide aceptar el EULA de Minecraft.
 
 La configuracion y los panoramas personalizados se guardan en
 `%AppData%\McPanel`.
@@ -104,8 +112,12 @@ espanol y el valor es su traduccion. Para anadir uno nuevo copia
 `languages/plantilla.json.example`, cambia `code` y `name`, y cargalo desde
 *Configuracion de la App -> Idioma -> AGREGAR IDIOMA*.
 
+## Aviso
+
+Gran parte del codigo se genero con ayuda de IA, pero ha sido revisado por
+personas. Si encuentras un fallo, abre un
+[issue](https://github.com/TakunaiMaro/OrthanMC/issues).
+
 ## Licencia
 
-Este repositorio todavia no tiene una licencia definida. Si vas a distribuir
-la aplicacion o reutilizar el codigo, anade antes el archivo `LICENSE` que
-corresponda.
+Distribuido bajo la licencia MIT. Consulta [LICENSE](LICENSE).
