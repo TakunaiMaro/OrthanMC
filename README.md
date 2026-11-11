@@ -42,12 +42,12 @@ El proyecto esta desarrollado principalmente en español; Puedes cambiar entre e
 
 ## Instalacion
 
-1. Descarga el ultimo `OrthancMC-vX.Y.Z-win-x64.zip` desde
+1. Descarga el ultimo `OrthancMC-vX.X.X-win-x64.zip` desde
    [Releases](https://github.com/TakunaiMaro/OrthanMC/releases).
 2. Descomprime la carpeta en una ubicacion fija (por ejemplo
    `C:\Servers\OrthancMC`).
 3. Ejecuta `McPanel.exe`.
-4. La primera vez se abre el asistente, pregunta:
+4. La primera vez se abre la app, pregunta:
    - si ya tienes archivos del servidor o si quieres una instalacion
      limpia.
    - Ofrece instalar el Java necesario para arrancar el servidor.
