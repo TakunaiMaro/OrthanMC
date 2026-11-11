@@ -1,7 +1,5 @@
 # Orthanc Mc
 
-![Orthanc Mc](assets/logo-Orthanc-800.png)
-
 Panel de escritorio para administrar un servidor local de Minecraft y su
 tunel de [Playit](https://playit.gg). Reune en una sola ventana el estado del
 servidor, la consola, los jugadores, las copias de seguridad, las versiones de
