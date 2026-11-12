@@ -9,6 +9,8 @@ namespace McPanel
     {
         public string ServerJarFolder { get; set; }
         public string PlayitLocation { get; set; }
+        // Se conserva por compatibilidad con config.json antiguos; el
+        // asistente ya no pregunta el nick y ninguna funcion lo usa.
         public string AdminNickname { get; set; }
         public string Theme { get; set; } = "default";
         public string Language { get; set; } = "es";
@@ -103,7 +105,7 @@ namespace McPanel
         
         public bool IsConfigured()
         {
-            return !string.IsNullOrEmpty(ServerJarFolder) && !string.IsNullOrEmpty(AdminNickname);
+            return !string.IsNullOrEmpty(ServerJarFolder);
         }
     }
 }

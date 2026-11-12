@@ -49,8 +49,11 @@ espanol e ingles.
    [Releases](https://github.com/TakunaiMaro/OrthanMC/releases).
 2. Descomprime la carpeta en una ubicacion fija (por ejemplo
    `C:\Servers\OrthancMC`).
-3. Ejecuta `McPanel.exe`.
+3. Ejecuta `McPanel.exe`. El paquete trae un unico ejecutable: las demas
+   carpetas (`languages`, `themes`) solo contienen archivos editables.
 4. La primera vez se abre el asistente, que:
+   - pregunta el idioma (English / Espanol);
+   - configura Playit.GG para el tunel publico;
    - pregunta si ya tienes archivos del servidor o si quieres una instalacion
      limpia;
    - ofrece instalar el Java necesario para arrancar el servidor;
@@ -72,6 +75,20 @@ Generar un paquete de release:
 pwsh ./scripts/build-release.ps1
 # o, con PowerShell 5.1:
 powershell -ExecutionPolicy Bypass -File .\scripts\build-release.ps1
+```
+
+Por defecto el paquete es *single-file* y *self-contained*: un solo
+`McPanel.exe` (sin `.dll` sueltas) junto a las carpetas `languages/` y
+`themes/` con contenido editable.
+
+Opciones utiles:
+
+```powershell
+# Mantener el layout clasico con muchas .dll (para depurar)
+powershell -ExecutionPolicy Bypass -File .\scripts\build-release.ps1 -MultiFile
+
+# Paquete pequeno que requiere .NET 8 Desktop Runtime
+powershell -ExecutionPolicy Bypass -File .\scripts\build-release.ps1 -FrameworkDependent
 ```
 
 Salida: `dist/OrthancMC-v<version>-win-x64.zip`.

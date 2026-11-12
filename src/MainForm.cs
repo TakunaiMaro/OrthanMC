@@ -233,7 +233,9 @@ namespace McPanel
             root.Dock = DockStyle.Fill;
             root.Margin = new Padding(0);
             root.Padding = new Padding(0);
-            root.BackColor = Palette.Bg;
+            // Transparente para que el fondo de panorama del _body se vea
+            // detras de la barra lateral y de la columna principal.
+            root.BackColor = Color.Transparent;
             root.ColumnCount = 2;
             root.RowCount = 1;
             _sidebarWidth = Dp(290);
@@ -256,7 +258,7 @@ namespace McPanel
             main.Dock = DockStyle.Fill;
             main.Margin = new Padding(0);
             main.Padding = new Padding(0);
-            main.BackColor = Palette.Bg;
+            main.BackColor = Color.Transparent;
             main.ColumnCount = 1;
             main.RowCount = 2;
             main.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
@@ -267,7 +269,7 @@ namespace McPanel
             _header.Name = "_header";
             _header.Dock = DockStyle.Fill;
             _header.Margin = new Padding(0);
-            _header.BackColor = Palette.Bg;
+            _header.BackColor = Color.Transparent;
             _header.Padding = new Padding(Dp(38), Dp(12), Dp(38), Dp(10));
             BuildHeader();
 
@@ -275,7 +277,7 @@ namespace McPanel
             _content.Name = "_content";
             _content.Dock = DockStyle.Fill;
             _content.Margin = new Padding(0);
-            _content.BackColor = Palette.Bg;
+            _content.BackColor = Color.Transparent;
             _content.Padding = new Padding(Dp(38), Dp(16), Dp(38), Dp(28));
 
             _viewStatus = BuildStatus();
@@ -319,7 +321,8 @@ namespace McPanel
             // El cuerpo aloja la barra lateral y la columna principal. La
             // pantalla de Perfiles vive dentro de esa columna para que el
             // boton de la barra lateral funcione igual en todas las vistas.
-            _body = new Panel();
+            // El panel tambien dibuja el panorama custom como fondo.
+            _body = new PanoramaBackdrop.PanoramaHostPanel();
             _body.Name = "_body";
             _body.Dock = DockStyle.Fill;
             _body.Margin = new Padding(0);

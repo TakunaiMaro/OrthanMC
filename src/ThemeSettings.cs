@@ -25,6 +25,9 @@ namespace McPanel
         {
             Current = theme;
             CurrentPanorama = layer;
+            // El fondo compuesto depende del panorama y de la paleta: se
+            // descarta para que la proxima pintura lo regenere.
+            PanoramaBackdrop.Invalidate();
             ThemeApplier.ApplyToOpenForms();
             if (ThemeChanged != null) ThemeChanged(null, EventArgs.Empty);
         }

@@ -218,6 +218,15 @@ namespace McPanel
             }
             return fallback;
         }
+
+        // Limpia el fondo de un control: usa el panorama cuando el tema
+        // CustomPanorama esta activo y el control vive dentro del panel
+        // anfitrion; si no, pinta el color solido de siempre.
+        public static void PaintBackdrop(Graphics g, Control control, Color fallback)
+        {
+            if (g == null) return;
+            if (!PanoramaBackdrop.TryPaint(g, control)) g.Clear(fallback);
+        }
     }
 
     internal static class Fonts

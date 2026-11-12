@@ -25,6 +25,162 @@ namespace McPanel
         }
     }
 
+    // Fondo de ventana del tema CustomPanorama. Compone el equirectangular
+    // una sola vez por tamano, le aplica un velo oscuro para conservar el
+    // contraste y lo dibuja detras de la interfaz. Los controles que pintan
+    // su propio fondo reciben el mismo recorte para que las esquinas
+    // redondeadas no muestren parches del color plano anterior.
+    internal static class PanoramaBackdrop
+    {
+        private static Bitmap _surface;
+        private static Size _surfaceSize;
+        private static PanoramaLayer _surfaceLayer;
+        private static Color _surfaceTint;
+
+        public static bool Active
+        {
+            get
+            {
+                PanoramaLayer layer = ThemeManager.CurrentPanorama;
+                return ThemeManager.Current == AppTheme.CustomPanorama &&
+                    layer != null && layer.HasImages;
+            }
+        }
+
+        // Se invalida al cambiar de tema o de panorama: la proxima pintura
+        // vuelve a componer la imagen con la paleta vigente.
+        public static void Invalidate()
+        {
+            if (_surface != null)
+            {
+                try { _surface.Dispose(); } catch { }
+            }
+            _surface = null;
+            _surfaceLayer = null;
+            _surfaceSize = Size.Empty;
+        }
+
+        public static Bitmap Surface(Size size)
+        {
+            if (!Active) return null;
+            if (size.Width < 16 || size.Height < 16) return null;
+
+            PanoramaLayer layer = ThemeManager.CurrentPanorama;
+            Color tint = Palette.Bg;
+            if (_surface != null && ReferenceEquals(_surfaceLayer, layer) &&
+                Math.Abs(_surfaceSize.Width - size.Width) <= 4 &&
+                Math.Abs(_surfaceSize.Height - size.Height) <= 4 &&
+                _surfaceTint.ToArgb() == tint.ToArgb())
+            {
+                return _surface;
+            }
+
+            Invalidate();
+            try
+            {
+                _surface = Compose(size, layer, tint);
+                _surfaceSize = size;
+                _surfaceLayer = layer;
+                _surfaceTint = tint;
+            }
+            catch
+            {
+                _surface = null;
+            }
+            return _surface;
+        }
+
+        private static Bitmap Compose(Size size, PanoramaLayer layer, Color tint)
+        {
+            Bitmap source = layer.Equirect;
+            if (source == null)
+            {
+                source = layer.Faces[1] != null ? layer.Faces[1] : layer.Faces[0];
+                if (source == null) return null;
+            }
+
+            Bitmap composed = new Bitmap(size.Width, size.Height, PixelFormat.Format32bppPArgb);
+            using (Graphics g = Graphics.FromImage(composed))
+            {
+                g.InterpolationMode = InterpolationMode.HighQualityBilinear;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.Clear(tint);
+
+                // "Cover": el panorama llena toda la ventana recortando los
+                // bordes sobrantes en lugar de deformarse.
+                float scale = Math.Max(size.Width / (float)source.Width,
+                    size.Height / (float)source.Height);
+                if (scale <= 0f) scale = 1f;
+                int w = (int)Math.Ceiling(source.Width * scale);
+                int h = (int)Math.Ceiling(source.Height * scale);
+                int x = (size.Width - w) / 2;
+                int y = (size.Height - h) / 2;
+                g.DrawImage(source, new Rectangle(x, y, w, h));
+
+                // Velo: el panorama se percibe pero no compite con el texto.
+                using (SolidBrush veil = new SolidBrush(Color.FromArgb(196, tint)))
+                    g.FillRectangle(veil, 0, 0, size.Width, size.Height);
+            }
+            return composed;
+        }
+
+        // Pinta el recorte del fondo que corresponde a este control. Solo
+        // aplica si el control vive dentro del panel anfitrion del panorama.
+        public static bool TryPaint(Graphics g, Control control)
+        {
+            if (g == null || control == null || !Active) return false;
+            PanoramaHostPanel host = FindHost(control);
+            if (host == null) return false;
+
+            Bitmap surface = Surface(host.ClientSize);
+            if (surface == null) return false;
+
+            Point origin;
+            try { origin = host.PointToClient(control.PointToScreen(Point.Empty)); }
+            catch { return false; }
+
+            g.DrawImageUnscaled(surface, -origin.X, -origin.Y);
+            return true;
+        }
+
+        private static PanoramaHostPanel FindHost(Control control)
+        {
+            Control current = control;
+            while (current != null)
+            {
+                PanoramaHostPanel host = current as PanoramaHostPanel;
+                if (host != null) return host;
+                current = current.Parent;
+            }
+            return null;
+        }
+
+        // Panel anfitrion: pinta el panorama completo en su propio fondo y
+        // sus hijos transparentes heredan ese dibujo automaticamente.
+        internal sealed class PanoramaHostPanel : Panel
+        {
+            public PanoramaHostPanel()
+            {
+                SetStyle(ControlStyles.AllPaintingInWmPaint |
+                    ControlStyles.OptimizedDoubleBuffer |
+                    ControlStyles.ResizeRedraw, true);
+                DoubleBuffered = true;
+            }
+
+            protected override void OnPaintBackground(PaintEventArgs e)
+            {
+                Bitmap surface = PanoramaBackdrop.Surface(ClientSize);
+                if (surface == null)
+                {
+                    base.OnPaintBackground(e);
+                    return;
+                }
+                e.Graphics.DrawImageUnscaled(surface, 0, 0);
+            }
+        }
+    }
+
     internal class PanoramaRenderer : Panel
     {
         private float _angle = 0f;

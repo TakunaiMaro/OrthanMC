@@ -51,6 +51,10 @@ Si no tienes PowerShell 7 (`pwsh`) instalado, usa el de Windows:
 powershell -ExecutionPolicy Bypass -File .\scripts\build-release.ps1 -Version 1.0.1
 ```
 
+El script genera por defecto un `McPanel.exe` unico (self-contained y
+comprimido) con las carpetas `languages/` y `themes/` al lado. Usa
+`-MultiFile` si necesitas el layout clasico con las `.dll` sueltas.
+
 Despues sube `dist/OrthancMC-v1.0.1-win-x64.zip` como asset de la release.
 
 ## Como encuentra las actualizaciones la app

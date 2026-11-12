@@ -492,7 +492,7 @@ namespace McPanel
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            e.Graphics.Clear(Palette.Bg);
+            Palette.PaintBackdrop(e.Graphics, this, Palette.Bg);
             base.OnPaint(e);
         }
 
@@ -535,7 +535,7 @@ namespace McPanel
         {
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.Clear(Palette.Backdrop(this, Palette.Bg));
+            Palette.PaintBackdrop(g, this, Palette.Bg);
             RectangleF r = new RectangleF(0.5f, 0.5f, Width - 1f, Height - 1f);
             Draw.FillRound(g, r, Height / 2f, Palette.Alpha(Palette.Accent, 26));
             Draw.StrokeRound(g, r, Height / 2f, Palette.Alpha(Palette.Accent, 80), 1f);
@@ -694,7 +694,7 @@ namespace McPanel
         {
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.Clear(Palette.Backdrop(this, Palette.Bg));
+            Palette.PaintBackdrop(g, this, Palette.Bg);
 
             RectangleF card = new RectangleF(0.5f, 0.5f, Width - 1f, Height - 1f);
             Draw.FillRound(g, card, 11f, Palette.Card);

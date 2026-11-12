@@ -34,12 +34,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="themes\**\*" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="languages\**\*" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="assets\logo-Orthanc.ico" Link="logo-Orthanc.ico" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="assets\logo-Orthanc-136.ico" Link="logo-Orthanc-136.ico" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="assets\logo-Orthanc-136.png" Link="logo-Orthanc-136.png" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="assets\logo-Orthanc-800.png" Link="logo-Orthanc-800.png" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Contenido externo al ejecutable: debe seguir como archivo suelto
+         incluso en el paquete de un solo archivo (ExcludeFromSingleFile),
+         porque la app lo lee desde su carpeta. -->
+    <None Include="themes\**\*" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <None Include="languages\**\*" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <None Include="assets\logo-Orthanc.ico" Link="logo-Orthanc.ico" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <None Include="assets\logo-Orthanc-136.ico" Link="logo-Orthanc-136.ico" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <None Include="assets\logo-Orthanc-136.png" Link="logo-Orthanc-136.png" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <None Include="assets\logo-Orthanc-800.png" Link="logo-Orthanc-800.png" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>
 
 </Project>

@@ -55,7 +55,7 @@ namespace McPanel
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             // Limpiar tambien las esquinas: si solo se pinta el path redondeado,
             // quedan restos del tema anterior en forma de triangulos.
-            e.Graphics.Clear(Palette.Backdrop(this, Palette.Bg));
+            Palette.PaintBackdrop(e.Graphics, this, Palette.Bg);
             RectangleF r = new RectangleF(0f, 0f, Width - 1f, Height - 1f);
             Draw.FillRound(e.Graphics, r, _radius, BackColor);
             if (_border.A > 0)
@@ -116,7 +116,7 @@ namespace McPanel
             Graphics g = pevent.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
             Color parent = Palette.Backdrop(this, Palette.Bg);
-            g.Clear(parent);
+            Palette.PaintBackdrop(g, this, parent);
 
             Color fill;
             Color text;
@@ -194,7 +194,7 @@ namespace McPanel
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
             Color parent = Palette.Backdrop(this, Palette.Card);
-            g.Clear(parent);
+            Palette.PaintBackdrop(g, this, parent);
             float radius = Height / 2f;
             RectangleF track = new RectangleF(0, 0, Width, Height);
             Draw.FillRound(g, track, radius, Palette.Mix(parent, Color.Black, 0.22f));
@@ -261,7 +261,7 @@ namespace McPanel
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
             Color parent = Palette.Backdrop(this, Palette.Card);
-            g.Clear(parent);
+            Palette.PaintBackdrop(g, this, parent);
             float h = Math.Min(Height, 24f);
             float w = Math.Min(Width, 44f);
             RectangleF track = new RectangleF((Width - w) / 2f, (Height - h) / 2f, w, h);
@@ -311,7 +311,7 @@ namespace McPanel
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
             Color parent = Palette.Backdrop(this, Palette.Sidebar);
-            g.Clear(parent);
+            Palette.PaintBackdrop(g, this, parent);
 
             if (_active || _hover)
             {
@@ -390,7 +390,7 @@ namespace McPanel
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
             Color parent = Palette.Backdrop(this, Palette.Card);
-            g.Clear(parent);
+            Palette.PaintBackdrop(g, this, parent);
             RectangleF r = new RectangleF(0.5f, 0.5f, Width - 1f, Height - 1f);
             Color fill = Palette.Mix(parent, _dot, 0.16f);
             Color border = Palette.Mix(parent, _dot, 0.38f);
@@ -495,7 +495,7 @@ namespace McPanel
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
             Color parent = Palette.Backdrop(this, Palette.Card);
-            g.Clear(parent);
+            Palette.PaintBackdrop(g, this, parent);
             float left = 8f;
             float right = Width - 8f;
             float cy = Height / 2f;
@@ -664,7 +664,7 @@ namespace McPanel
         {
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.Clear(Palette.Backdrop(this, Palette.Card));
+            Palette.PaintBackdrop(g, this, Palette.Card);
             RectangleF r = new RectangleF(0.5f, 0.5f, Width - 2f, Height - 2f);
             Draw.FillRound(g, r, 9f, Palette.Input);
             Draw.StrokeRound(g, r, 9f, Enabled ? ((_hover || Focused) ? Palette.Accent : Palette.Border) : Palette.Border, 1f);
@@ -797,7 +797,7 @@ namespace McPanel
         {
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.Clear(Palette.Backdrop(this, Palette.Bg));
+            Palette.PaintBackdrop(g, this, Palette.Bg);
 
             RectangleF r = new RectangleF(0.5f, 0.5f, Width - 1f, Height - 1f);
             Color fill = _disabled
@@ -947,7 +947,7 @@ namespace McPanel
         {
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             Color parent = Palette.Backdrop(this, Palette.Bg);
-            e.Graphics.Clear(parent);
+            Palette.PaintBackdrop(e.Graphics, this, parent);
             RectangleF r = new RectangleF(0.5f, 0.5f, Width - 1f, Height - 1f);
             Draw.FillRound(e.Graphics, r, _radius, Palette.Input);
             Draw.StrokeRound(e.Graphics, r, _radius, _focused ? Palette.Accent : Palette.Border, 1f);
@@ -1111,7 +1111,7 @@ namespace McPanel
         {
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.Clear(Palette.Backdrop(this, Palette.Bg));
+            Palette.PaintBackdrop(g, this, Palette.Bg);
             RectangleF r = new RectangleF(0.5f, 0.5f, Width - 1f, Height - 1f);
             Draw.FillRound(g, r, 12f, Palette.CardAlt);
             Draw.StrokeRound(g, r, 12f, Palette.Border, 1f);

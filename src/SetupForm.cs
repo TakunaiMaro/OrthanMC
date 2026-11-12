@@ -16,6 +16,7 @@ namespace McPanel
     {
         private enum Step
         {
+            Language,
             Intro,
             Download,
             PlayitPath,
@@ -33,11 +34,10 @@ namespace McPanel
         private readonly Panel _footer;
         private readonly RoundButton _back;
         private readonly Stack<Step> _history = new Stack<Step>();
-        private Step _step = Step.Intro;
+        private Step _step = Step.Language;
 
         private string _playitPath = "";
         private string _existingSource = "";
-        private string _nickname = "";
         private string _lastSummary = "";
 
         private List<JarOption> _versionOptions = new List<JarOption>();
@@ -60,13 +60,6 @@ namespace McPanel
             Font = Fonts.UI(9.5f);
 
             _playitPath = DetectPlayitPath();
-            _nickname = Environment.UserName;
-            try
-            {
-                AppConfig config = AppConfig.Instance;
-                if (!string.IsNullOrWhiteSpace(config.AdminNickname)) _nickname = config.AdminNickname;
-            }
-            catch { }
 
             TableLayoutPanel shell = new TableLayoutPanel();
             shell.Dock = DockStyle.Fill;
@@ -109,7 +102,9 @@ namespace McPanel
             {
                 WindowFx.DarkTitleBar(Handle);
                 BuildStep();
-                LanguageService.ApplyTo(this);
+                // La pantalla de idioma se muestra siempre en ingles; el
+                // resto del asistente usa el idioma elegido.
+                if (_step != Step.Language) LanguageService.ApplyTo(this);
             };
             Shown += delegate { WindowFx.DarkTitleBar(Handle); };
         }
@@ -143,6 +138,7 @@ namespace McPanel
             _back.Visible = _history.Count > 0 && _step != Step.Completion;
             switch (_step)
             {
+                case Step.Language: BuildLanguage(); break;
                 case Step.Intro: BuildIntro(); break;
                 case Step.Download: BuildDownload(); break;
                 case Step.PlayitPath: BuildPlayitPath(); break;
@@ -382,6 +378,39 @@ namespace McPanel
         // ------------------------------------------------------------------
         // Paso 1: Playit.GG
         // ------------------------------------------------------------------
+        // Primera pantalla del asistente. Se muestra en ingles a proposito:
+        // cualquier usuario debe poder elegir el idioma antes de continuar.
+        private void BuildLanguage()
+        {
+            TableLayoutPanel stack = NewPage("ORTHANC MC  ·  SETUP",
+                "Choose your language",
+                "Select the language you want to use in the app. You can change it later in " +
+                "App Configuration > Language.");
+
+            RoundButton english = MakePrimary("ENGLISH", "check");
+            english.Click += delegate { ChooseLanguage("en"); };
+            Add(stack, english);
+
+            RoundButton spanish = MakeSecondary("ESPANOL", "globe");
+            spanish.Click += delegate { ChooseLanguage("es"); };
+            Add(stack, spanish);
+
+            Add(stack, MakeText("The rest of the setup will use the language you select.",
+                8.75f, Palette.Dim, false, true, new Padding(0, 12, 0, 0)));
+        }
+
+        private void ChooseLanguage(string code)
+        {
+            bool applied;
+            try { applied = LanguageService.SetLanguage(code, true); }
+            catch { applied = false; }
+
+            Go(Step.Intro);
+            // Cada pagina se construye con textos base; aqui se traducen al
+            // idioma recien elegido (incluido el titulo y los botones).
+            if (applied) LanguageService.ApplyTo(this);
+        }
+
         private void BuildIntro()
         {
             TableLayoutPanel stack = NewPage("PASO 1 DE 2  ·  PLAYIT.GG",
@@ -612,15 +641,12 @@ namespace McPanel
                 if (!string.IsNullOrWhiteSpace(leaf)) name.Text = leaf;
             };
 
-            InputBox nickname = AddField(stack, "TU NICKNAME DE ADMIN", _nickname, "Ej: TakunaiMaro");
-
             Label status = AddStatus(stack);
             RoundButton move = MakePrimary("MOVER SERVIDOR Y CONTINUAR", "folder");
             move.Click += async delegate
             {
                 string from = source.Text.Trim();
                 string serverName = name.Text.Trim();
-                string nick = nickname.Text.Trim();
                 if (!ValidateSource(from, out string sourceError))
                 {
                     MessageDialog.Info(this, "Servidor", sourceError);
@@ -629,11 +655,6 @@ namespace McPanel
                 if (!ValidateName(serverName, out string nameError))
                 {
                     MessageDialog.Info(this, "Servidor", nameError);
-                    return;
-                }
-                if (nick.Length == 0)
-                {
-                    MessageDialog.Info(this, "Servidor", "El nickname de admin es obligatorio.");
                     return;
                 }
 
@@ -675,7 +696,7 @@ namespace McPanel
                 try
                 {
                     await Task.Run(delegate { MoveDirectory(from, target); });
-                    SaveConfig(target, serverName, nick, null, null);
+                    SaveConfig(target, serverName, null, null);
                     _lastSummary = "Servidor importado en:\r\n" + target;
                     Go(Step.Completion);
                 }
@@ -704,25 +725,17 @@ namespace McPanel
                 @"Ej: C:\Servers\Casual", true, delegate(string chosen) { _existingSource = chosen; });
             source.TextChanged += delegate { _existingSource = source.Text.Trim(); };
 
-            InputBox nickname = AddField(stack, "TU NICKNAME DE ADMIN", _nickname, "Ej: TakunaiMaro");
-
             RoundButton use = MakePrimary("USAR ESTE SERVIDOR", "check");
             use.Click += delegate
             {
                 string folder = source.Text.Trim();
-                string nick = nickname.Text.Trim();
                 if (!ValidateSource(folder, out string error))
                 {
                     MessageDialog.Info(this, "Servidor", error);
                     return;
                 }
-                if (nick.Length == 0)
-                {
-                    MessageDialog.Info(this, "Servidor", "El nickname de admin es obligatorio.");
-                    return;
-                }
                 string name = Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-                SaveConfig(folder, name, nick, null, null);
+                SaveConfig(folder, name, null, null);
                 _lastSummary = "Servidor actual:\r\n" + folder;
                 Go(Step.Completion);
             };
@@ -737,7 +750,6 @@ namespace McPanel
                 "). Elegimos la version, descargamos el server.jar y preparamos el EULA.");
 
             InputBox name = AddField(stack, "NOMBRE DEL SERVIDOR (CARPETA)", "Survival", "Ej: Survival");
-            InputBox nickname = AddField(stack, "TU NICKNAME DE ADMIN", _nickname, "Ej: TakunaiMaro");
 
             Add(stack, MakeText("VERSION DE MINECRAFT", 8.5f, Palette.Muted, true, false, new Padding(0, 8, 0, 5)));
             SelectBox version = new SelectBox(new string[] { "Cargando versiones..." }, "Cargando versiones...");
@@ -794,7 +806,7 @@ namespace McPanel
                     MessageDialog.Info(this, "Servidor", "Selecciona una version de Minecraft.");
                     return;
                 }
-                await CreateServerAsync(name.Text.Trim(), nickname.Text.Trim(),
+                await CreateServerAsync(name.Text.Trim(),
                     _versionOptions[version.SelectedIndex], eula.Checked, java.Checked,
                     create, progress, status);
             };
@@ -880,14 +892,9 @@ namespace McPanel
             }
         }
 
-        private async Task CreateServerAsync(string serverName, string nickname, JarOption option,
+        private async Task CreateServerAsync(string serverName, JarOption option,
             bool acceptedEula, bool downloadJava, RoundButton create, UsageBar progress, Label status)
         {
-            if (string.IsNullOrWhiteSpace(nickname))
-            {
-                MessageDialog.Info(this, "Servidor", "El nickname de admin es obligatorio.");
-                return;
-            }
             if (!acceptedEula)
             {
                 MessageDialog.Info(this, "EULA", "Debes aceptar el EULA de Minecraft para crear el servidor.");
@@ -961,7 +968,7 @@ namespace McPanel
                 }
 
                 WriteInitialFiles(target, serverName, javaMajor, option.MinecraftVersion);
-                SaveConfig(target, serverName, nickname, option, download);
+                SaveConfig(target, serverName, option, download);
                 _lastSummary = "Servidor: " + serverName + "\r\n" +
                     "Carpeta: " + target + "\r\n" +
                     "Minecraft: " + option.MinecraftVersion + " (Vanilla)\r\n" +
@@ -1045,7 +1052,7 @@ namespace McPanel
                 new UTF8Encoding(false));
         }
 
-        private void SaveConfig(string serverFolder, string serverName, string nickname,
+        private void SaveConfig(string serverFolder, string serverName,
             JarOption option, JarDownload download)
         {
             AppConfig config = AppConfig.Instance;
@@ -1055,7 +1062,6 @@ namespace McPanel
                 ? Path.GetFileName(serverFolder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
                 : serverName;
             config.PlayitLocation = _playitPath;
-            config.AdminNickname = nickname;
             if (string.IsNullOrEmpty(config.Theme)) config.Theme = "default";
             if (option != null)
             {
