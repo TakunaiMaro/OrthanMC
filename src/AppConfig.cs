@@ -13,7 +13,8 @@ namespace McPanel
         // asistente ya no pregunta el nick y ninguna funcion lo usa.
         public string AdminNickname { get; set; }
         public string Theme { get; set; } = "default";
-        public string Language { get; set; } = "es";
+        // Vacio = usar el idioma de Windows en el primer arranque.
+        public string Language { get; set; } = "";
 
         // Copia local del ZIP de panorama custom elegido por el usuario.
         // Se guarda para poder reconstruir el tema CustomPanorama al arrancar.

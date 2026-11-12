@@ -26,6 +26,7 @@ namespace McPanel
     internal static class LanguageService
     {
         public const string SpanishCode = "es";
+        public const string EnglishCode = "en";
 
         private static readonly List<LanguagePack> Packs = new List<LanguagePack>();
         private static readonly Dictionary<string, string> CanonicalByNorm =
@@ -74,8 +75,26 @@ namespace McPanel
         public static void Initialize(string code)
         {
             Reload();
-            LanguagePack pack = Find(code) ?? Find(SpanishCode) ?? (Packs.Count > 0 ? Packs[0] : null);
+            LanguagePack pack = Find(code);
+            // Sin idioma guardado se usa el de Windows; si no es espanol,
+            // el idioma base es ingles.
+            if (pack == null) pack = Find(DetectSystemLanguage());
+            if (pack == null) pack = Find(SpanishCode) ?? (Packs.Count > 0 ? Packs[0] : null);
             Current = pack;
+        }
+
+        // Idioma de la interfaz de Windows. Solo se admiten espanol e
+        // ingles; cualquier otro idioma cae en ingles.
+        public static string DetectSystemLanguage()
+        {
+            try
+            {
+                string code = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+                if (string.Equals(code, SpanishCode, StringComparison.OrdinalIgnoreCase))
+                    return SpanishCode;
+            }
+            catch { }
+            return EnglishCode;
         }
 
         public static void Reload()
@@ -248,6 +267,13 @@ namespace McPanel
             string translated;
             if (Current.ByNorm.TryGetValue(keyNorm, out translated) && !string.IsNullOrEmpty(translated))
                 return translated;
+
+            // Si el idioma vigente no define esta cadena se devuelve el texto
+            // canonico en espanol; asi un control traducido antes (por ejemplo
+            // al volver de ingles a espanol) recupera su texto base.
+            string canonical;
+            if (CanonicalByNorm.TryGetValue(keyNorm, out canonical) && !string.IsNullOrEmpty(canonical))
+                return canonical;
             return text;
         }
 

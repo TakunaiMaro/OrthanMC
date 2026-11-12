@@ -1,5 +1,6 @@
 ﻿#nullable disable
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -25,17 +26,38 @@ namespace McPanel
         }
     }
 
-    // Fondo de ventana del tema CustomPanorama. Compone el equirectangular
-    // una sola vez por tamano, le aplica un velo oscuro para conservar el
-    // contraste y lo dibuja detras de la interfaz. Los controles que pintan
-    // su propio fondo reciben el mismo recorte para que las esquinas
-    // redondeadas no muestren parches del color plano anterior.
+    // Fondo de ventana del tema CustomPanorama. Mantiene una unica tira
+    // equirectangular escalada (y oscurecida con un velo) y la desplaza
+    // horizontalmente para simular el giro del menu de Minecraft.
+    //
+    // La tira solo se reconstruye cuando cambia el alto de la ventana y la
+    // redimension termina; mientras el usuario arrastra el borde se pinta un
+    // fondo solido, evitando re-renderizar el panorama original en cada
+    // evento de resize.
     internal static class PanoramaBackdrop
     {
-        private static Bitmap _surface;
-        private static Size _surfaceSize;
-        private static PanoramaLayer _surfaceLayer;
-        private static Color _surfaceTint;
+        private static readonly List<PanoramaHostPanel> Hosts = new List<PanoramaHostPanel>();
+
+        private static Bitmap _strip;
+        private static int _stripHeight;
+        private static PanoramaLayer _stripLayer;
+        private static Color _stripTint;
+
+        private static float _angle;
+        private static System.Windows.Forms.Timer _timer;
+        private static System.Windows.Forms.Timer _rebuildTimer;
+        private static System.Windows.Forms.Timer _interactionTimer;
+        private static bool _interacting;
+        private static int _pendingHeight;
+        private static int _lastHeight;
+
+        // 20 fps es suficiente para un giro lento y deja margen al resto de
+        // la interfaz. El angulo se acumula en grados, no se reinicia al
+        // cambiar de seccion: el panorama conserva centro y orientacion.
+        private const int FrameInterval = 50;
+        private const float DegreesPerSecond = 2.4f;
+        private const int RebuildDelay = 180;
+        private const int HeightTolerance = 8;
 
         public static bool Active
         {
@@ -48,81 +70,223 @@ namespace McPanel
         }
 
         // Se invalida al cambiar de tema o de panorama: la proxima pintura
-        // vuelve a componer la imagen con la paleta vigente.
+        // vuelve a componer la tira con la paleta vigente.
         public static void Invalidate()
         {
-            if (_surface != null)
-            {
-                try { _surface.Dispose(); } catch { }
-            }
-            _surface = null;
-            _surfaceLayer = null;
-            _surfaceSize = Size.Empty;
+            DisposeStrip();
+            _angle = 0f;
+            _pendingHeight = 0;
+            EnsureTimer();
+            InvalidateHosts(true);
         }
 
-        public static Bitmap Surface(Size size)
+        internal static void Register(PanoramaHostPanel host)
+        {
+            if (host == null || Hosts.Contains(host)) return;
+            Hosts.Add(host);
+            EnsureTimer();
+        }
+
+        internal static void Unregister(PanoramaHostPanel host)
+        {
+            if (host != null) Hosts.Remove(host);
+        }
+
+        private static void EnsureTimer()
+        {
+            if (_timer != null) return;
+            _timer = new System.Windows.Forms.Timer();
+            _timer.Interval = FrameInterval;
+            _timer.Tick += delegate { Step(); };
+            _timer.Start();
+        }
+
+        private static void Step()
+        {
+            if (!Active || Hosts.Count == 0) return;
+
+            _angle += DegreesPerSecond * (FrameInterval / 1000f);
+            if (_angle >= 360f) _angle -= 360f;
+
+            // Mientras el usuario redimensiona o mueve la ventana no se
+            // repinta el fondo: el giro continua, pero sin competir con el
+            // layout. Al terminar se repinta todo una sola vez.
+            if (_interacting) return;
+            InvalidateHosts(false);
+        }
+
+        // El panel avisa al empezar/terminar de cambiar de tamano. Durante
+        // ese intervalo los controles usan su color solido, sin re-renderizar
+        // el panorama; al terminar se reconstruye la tira una sola vez.
+        internal static void NotifyHostResize()
+        {
+            _interacting = true;
+            if (_interactionTimer == null)
+            {
+                _interactionTimer = new System.Windows.Forms.Timer();
+                _interactionTimer.Interval = 220;
+                _interactionTimer.Tick += delegate
+                {
+                    _interactionTimer.Stop();
+                    FinishInteraction();
+                };
+            }
+            _interactionTimer.Stop();
+            _interactionTimer.Start();
+        }
+
+        private static void FinishInteraction()
+        {
+            _interacting = false;
+            if (!Active) return;
+
+            int height = ClampStripHeight(_lastHeight > 0 ? _lastHeight : _stripHeight);
+            if (_strip == null || Math.Abs(_stripHeight - height) > HeightTolerance)
+                BuildStrip(height, ThemeManager.CurrentPanorama, Palette.Bg);
+            if (_rebuildTimer != null) _rebuildTimer.Stop();
+
+            InvalidateHosts(true);
+        }
+
+        private static void InvalidateHosts(bool recursive)
+        {
+            for (int i = Hosts.Count - 1; i >= 0; i--)
+            {
+                PanoramaHostPanel host = Hosts[i];
+                if (host == null || host.IsDisposed)
+                {
+                    Hosts.RemoveAt(i);
+                    continue;
+                }
+
+                // Minimizada no hay nada que pintar: se evitan repintados
+                // que dejan la ventana a medio dibujar al restaurar.
+                Form form = host.FindForm();
+                if (form != null && form.WindowState == FormWindowState.Minimized) continue;
+
+                host.Invalidate(recursive);
+            }
+        }
+
+        // Devuelve la tira vigente. Si el alto cambio poco se reutiliza; si
+        // cambio mucho se sigue usando la anterior mientras se programa una
+        // reconstruccion para cuando el resize termine.
+        private static Bitmap StripFor(int hostHeight)
         {
             if (!Active) return null;
-            if (size.Width < 16 || size.Height < 16) return null;
 
             PanoramaLayer layer = ThemeManager.CurrentPanorama;
             Color tint = Palette.Bg;
-            if (_surface != null && ReferenceEquals(_surfaceLayer, layer) &&
-                Math.Abs(_surfaceSize.Width - size.Width) <= 4 &&
-                Math.Abs(_surfaceSize.Height - size.Height) <= 4 &&
-                _surfaceTint.ToArgb() == tint.ToArgb())
+            int height = ClampStripHeight(hostHeight);
+            _lastHeight = height;
+
+            if (_strip != null && ReferenceEquals(_stripLayer, layer) &&
+                _stripTint.ToArgb() == tint.ToArgb())
             {
-                return _surface;
+                if (Math.Abs(_stripHeight - height) <= HeightTolerance)
+                    return _strip;
+
+                ScheduleRebuild(height);
+                return _strip;
             }
 
-            Invalidate();
+            BuildStrip(height, layer, tint);
+            return _strip;
+        }
+
+        private static int ClampStripHeight(int height)
+        {
+            if (height < 240) height = 240;
+            if (height > 1440) height = 1440;
+            return height;
+        }
+
+        private static void ScheduleRebuild(int height)
+        {
+            _pendingHeight = height;
+            if (_rebuildTimer == null)
+            {
+                _rebuildTimer = new System.Windows.Forms.Timer();
+                _rebuildTimer.Interval = RebuildDelay;
+                _rebuildTimer.Tick += delegate
+                {
+                    _rebuildTimer.Stop();
+                    if (!Active) return;
+                    int pending = ClampStripHeight(_pendingHeight);
+                    if (_strip != null && Math.Abs(_stripHeight - pending) <= HeightTolerance)
+                        return;
+
+                    BuildStrip(pending, ThemeManager.CurrentPanorama, Palette.Bg);
+                    InvalidateHosts(true);
+                };
+            }
+            // Si el alto no cambia y ya hay una reconstruccion pendiente, se
+            // deja correr el temporizador: los ticks de rotacion no deben
+            // posponerla indefinidamente.
+            if (_rebuildTimer.Enabled && _pendingHeight == height) return;
+            _rebuildTimer.Stop();
+            _rebuildTimer.Start();
+        }
+
+        private static void BuildStrip(int height, PanoramaLayer layer, Color tint)
+        {
+            Bitmap source = layer != null ? layer.Equirect : null;
+            if (source == null)
+            {
+                source = layer != null
+                    ? (layer.Faces[1] != null ? layer.Faces[1] : layer.Faces[0])
+                    : null;
+                if (source == null)
+                {
+                    DisposeStrip();
+                    return;
+                }
+            }
+
+            Bitmap next = null;
             try
             {
-                _surface = Compose(size, layer, tint);
-                _surfaceSize = size;
-                _surfaceLayer = layer;
-                _surfaceTint = tint;
+                int width = Math.Max(2, (int)Math.Round(
+                    source.Width * (height / (double)source.Height)));
+                next = new Bitmap(width, height, PixelFormat.Format32bppPArgb);
+                using (Graphics g = Graphics.FromImage(next))
+                {
+                    g.CompositingMode = CompositingMode.SourceCopy;
+                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                    g.DrawImage(source, new Rectangle(0, 0, width, height));
+
+                    // Velo: el panorama se percibe pero no compite con el texto.
+                    g.CompositingMode = CompositingMode.SourceOver;
+                    using (SolidBrush veil = new SolidBrush(Color.FromArgb(196, tint)))
+                        g.FillRectangle(veil, 0, 0, width, height);
+                }
             }
             catch
             {
-                _surface = null;
+                if (next != null)
+                {
+                    try { next.Dispose(); } catch { }
+                    next = null;
+                }
             }
-            return _surface;
+
+            DisposeStrip();
+            _strip = next;
+            _stripHeight = height;
+            _stripLayer = layer;
+            _stripTint = tint;
         }
 
-        private static Bitmap Compose(Size size, PanoramaLayer layer, Color tint)
+        private static void DisposeStrip()
         {
-            Bitmap source = layer.Equirect;
-            if (source == null)
+            if (_strip != null)
             {
-                source = layer.Faces[1] != null ? layer.Faces[1] : layer.Faces[0];
-                if (source == null) return null;
+                try { _strip.Dispose(); } catch { }
+                _strip = null;
             }
-
-            Bitmap composed = new Bitmap(size.Width, size.Height, PixelFormat.Format32bppPArgb);
-            using (Graphics g = Graphics.FromImage(composed))
-            {
-                g.InterpolationMode = InterpolationMode.HighQualityBilinear;
-                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                g.SmoothingMode = SmoothingMode.AntiAlias;
-                g.Clear(tint);
-
-                // "Cover": el panorama llena toda la ventana recortando los
-                // bordes sobrantes en lugar de deformarse.
-                float scale = Math.Max(size.Width / (float)source.Width,
-                    size.Height / (float)source.Height);
-                if (scale <= 0f) scale = 1f;
-                int w = (int)Math.Ceiling(source.Width * scale);
-                int h = (int)Math.Ceiling(source.Height * scale);
-                int x = (size.Width - w) / 2;
-                int y = (size.Height - h) / 2;
-                g.DrawImage(source, new Rectangle(x, y, w, h));
-
-                // Velo: el panorama se percibe pero no compite con el texto.
-                using (SolidBrush veil = new SolidBrush(Color.FromArgb(196, tint)))
-                    g.FillRectangle(veil, 0, 0, size.Width, size.Height);
-            }
-            return composed;
+            _stripHeight = 0;
+            _stripLayer = null;
         }
 
         // Pinta el recorte del fondo que corresponde a este control. Solo
@@ -133,14 +297,42 @@ namespace McPanel
             PanoramaHostPanel host = FindHost(control);
             if (host == null) return false;
 
-            Bitmap surface = Surface(host.ClientSize);
-            if (surface == null) return false;
+            Size hostSize = host.ClientSize;
+            if (hostSize.Width < 16 || hostSize.Height < 16) return false;
+
+            // Durante un resize no se pinta el panorama: los controles usan
+            // su color solido y el anfitrion hereda el fondo plano. Cuando el
+            // arrastre termina (220 ms) se reconstruye la tira una sola vez.
+            if (_interacting) return false;
+
+            Bitmap strip = StripFor(hostSize.Height);
+            if (strip == null) return false;
 
             Point origin;
             try { origin = host.PointToClient(control.PointToScreen(Point.Empty)); }
             catch { return false; }
 
-            g.DrawImageUnscaled(surface, -origin.X, -origin.Y);
+            int destHeight = hostSize.Height;
+            int destWidth = (int)Math.Round(strip.Width * (destHeight / (double)strip.Height));
+            if (destWidth < 2) return false;
+
+            // Desplazamiento circular continuo. El centro vertical no cambia
+            // con el ancho de la ventana ni al navegar entre secciones.
+            double offset = (_angle / 360.0) * destWidth;
+            offset %= destWidth;
+            int shift = (int)offset;
+
+            int startX = -origin.X - shift;
+            startX %= destWidth;
+            if (startX > 0) startX -= destWidth;
+
+            Rectangle sourceRect = new Rectangle(0, 0, strip.Width, strip.Height);
+            for (int x = startX; x < control.Width; x += destWidth)
+            {
+                if (x + destWidth <= 0) continue;
+                g.DrawImage(strip, new Rectangle(x, -origin.Y, destWidth, destHeight),
+                    sourceRect, GraphicsUnit.Pixel);
+            }
             return true;
         }
 
@@ -166,17 +358,32 @@ namespace McPanel
                     ControlStyles.OptimizedDoubleBuffer |
                     ControlStyles.ResizeRedraw, true);
                 DoubleBuffered = true;
+                PanoramaBackdrop.Register(this);
             }
 
             protected override void OnPaintBackground(PaintEventArgs e)
             {
-                Bitmap surface = PanoramaBackdrop.Surface(ClientSize);
-                if (surface == null)
-                {
+                if (!PanoramaBackdrop.TryPaint(e.Graphics, this))
                     base.OnPaintBackground(e);
-                    return;
-                }
-                e.Graphics.DrawImageUnscaled(surface, 0, 0);
+            }
+
+            private const int WM_SIZE = 0x0005;
+            private const int WM_ENTERSIZEMOVE = 0x0231;
+            private const int WM_EXITSIZEMOVE = 0x0232;
+
+            protected override void WndProc(ref Message m)
+            {
+                if (m.Msg == WM_SIZE || m.Msg == WM_ENTERSIZEMOVE ||
+                    m.Msg == WM_EXITSIZEMOVE)
+                    PanoramaBackdrop.NotifyHostResize();
+
+                base.WndProc(ref m);
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing) PanoramaBackdrop.Unregister(this);
+                base.Dispose(disposing);
             }
         }
     }

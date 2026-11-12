@@ -42,7 +42,14 @@ namespace McPanel
                 Application.SetCompatibleTextRenderingDefault(false);
 
                 // El idioma guardado se carga antes de construir las ventanas.
-                try { LanguageService.Initialize(AppConfig.Instance.Language); }
+                // En el setup se parte siempre del idioma de Windows.
+                try
+                {
+                    string language = AppConfig.Instance.IsConfigured()
+                        ? AppConfig.Instance.Language
+                        : LanguageService.DetectSystemLanguage();
+                    LanguageService.Initialize(language);
+                }
                 catch { }
 
                 // El tema guardado se aplica antes de construir cualquier

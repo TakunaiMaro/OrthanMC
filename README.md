@@ -24,8 +24,11 @@ espanol e ingles.
   NeoForge y Fabric desde el propio panel.
 - **Plugins y mods**: activar/desactivar archivos `.jar` sin salir de la app.
 - **Temas**: Default, Overworld, Nether, End y panoramas personalizados
-  (`.zip` con `panorama_0` a `panorama_5`).
-- **Idiomas**: espanol e ingles, con archivos JSON editables.
+  (`.zip` con `panorama_0` a `panorama_5`). Con un panorama personalizado el
+  fondo gira lentamente sobre su eje, como el menu de Minecraft, y mantiene el
+  centro al cambiar de seccion o redimensionar la ventana.
+- **Idiomas**: espanol e ingles, con archivos JSON editables. El asistente
+  inicial usa el idioma de Windows (o ingles si es otro) y permite cambiarlo.
 - **Actualizaciones**: comprueba la ultima release publicada en GitHub y
   ofrece el enlace de descarga.
 
@@ -52,7 +55,8 @@ espanol e ingles.
 3. Ejecuta `McPanel.exe`. El paquete trae un unico ejecutable: las demas
    carpetas (`languages`, `themes`) solo contienen archivos editables.
 4. La primera vez se abre el asistente, que:
-   - pregunta el idioma (English / Espanol);
+   - muestra la seleccion de idioma en el idioma de Windows (espanol o ingles;
+     si Windows usa otro idioma, se muestra en ingles);
    - configura Playit.GG para el tunel publico;
    - pregunta si ya tienes archivos del servidor o si quieres una instalacion
      limpia;

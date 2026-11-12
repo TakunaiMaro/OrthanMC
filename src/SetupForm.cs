@@ -102,9 +102,6 @@ namespace McPanel
             {
                 WindowFx.DarkTitleBar(Handle);
                 BuildStep();
-                // La pantalla de idioma se muestra siempre en ingles; el
-                // resto del asistente usa el idioma elegido.
-                if (_step != Step.Language) LanguageService.ApplyTo(this);
             };
             Shown += delegate { WindowFx.DarkTitleBar(Handle); };
         }
@@ -154,6 +151,11 @@ namespace McPanel
 
             ResizePage();
             ResumeLayout();
+
+            // Cada pagina se construye con textos base en espanol; aqui se
+            // traducen al idioma vigente (detectado de Windows o elegido).
+            LanguageService.ApplyTo(this);
+            Text = Brand.Name + " - " + LanguageService.T("Configuracion inicial");
         }
 
         private void ResizePage()
@@ -320,7 +322,7 @@ namespace McPanel
                 {
                     using (OpenFileDialog dialog = new OpenFileDialog())
                     {
-                        dialog.Title = "Selecciona playit.exe";
+                        dialog.Title = LanguageService.T("Selecciona playit.exe");
                         dialog.Filter = "Playit.GG|playit.exe|Ejecutables|*.exe|Todos los archivos|*.*";
                         string current = box.Text.Trim();
                         if (File.Exists(current)) dialog.InitialDirectory = Path.GetDirectoryName(current);
@@ -378,14 +380,15 @@ namespace McPanel
         // ------------------------------------------------------------------
         // Paso 1: Playit.GG
         // ------------------------------------------------------------------
-        // Primera pantalla del asistente. Se muestra en ingles a proposito:
-        // cualquier usuario debe poder elegir el idioma antes de continuar.
+        // Primera pantalla del asistente. Se muestra en el idioma de Windows
+        // (o ingles si no es espanol/ingles) para que el usuario reconozca su
+        // idioma antes de elegir. Los botones no se traducen.
         private void BuildLanguage()
         {
             TableLayoutPanel stack = NewPage("ORTHANC MC  ·  SETUP",
-                "Choose your language",
-                "Select the language you want to use in the app. You can change it later in " +
-                "App Configuration > Language.");
+                "Elige tu idioma",
+                "Selecciona el idioma que quieres usar en la app. Puedes cambiarlo despues en " +
+                "Configuracion de la App > Idioma.");
 
             RoundButton english = MakePrimary("ENGLISH", "check");
             english.Click += delegate { ChooseLanguage("en"); };
@@ -395,20 +398,16 @@ namespace McPanel
             spanish.Click += delegate { ChooseLanguage("es"); };
             Add(stack, spanish);
 
-            Add(stack, MakeText("The rest of the setup will use the language you select.",
+            Add(stack, MakeText("El resto del asistente usara el idioma que elijas.",
                 8.75f, Palette.Dim, false, true, new Padding(0, 12, 0, 0)));
         }
 
         private void ChooseLanguage(string code)
         {
-            bool applied;
-            try { applied = LanguageService.SetLanguage(code, true); }
-            catch { applied = false; }
-
+            // Se guarda de inmediato para que el resto del asistente (y la
+            // app) use este idioma aunque el setup se cancele a medias.
+            try { LanguageService.SetLanguage(code, true); } catch { }
             Go(Step.Intro);
-            // Cada pagina se construye con textos base; aqui se traducen al
-            // idioma recien elegido (incluido el titulo y los botones).
-            if (applied) LanguageService.ApplyTo(this);
         }
 
         private void BuildIntro()
@@ -472,10 +471,10 @@ namespace McPanel
                 bool found = !string.IsNullOrWhiteSpace(path) && File.Exists(path);
                 status.ForeColor = found ? Palette.Accent : Palette.Amber;
                 status.Text = found
-                    ? "Detectado en: " + path
+                    ? LanguageService.T("Detectado en: ") + path
                     : (string.IsNullOrWhiteSpace(path)
-                        ? "No se encontro playit.exe. Descargalo o selecciona el archivo."
-                        : "No existe el archivo indicado: " + path);
+                        ? LanguageService.T("No se encontro playit.exe. Descargalo o selecciona el archivo.")
+                        : LanguageService.T("No existe el archivo indicado: ") + path);
             };
             updateStatus();
 
@@ -501,7 +500,7 @@ namespace McPanel
             {
                 using (OpenFileDialog dialog = new OpenFileDialog())
                 {
-                    dialog.Title = "Selecciona playit.exe";
+                    dialog.Title = LanguageService.T("Selecciona playit.exe");
                     dialog.Filter = "Playit.GG|playit.exe|Ejecutables|*.exe|Todos los archivos|*.*";
                     string current = field.Text.Trim();
                     if (File.Exists(current)) dialog.InitialDirectory = Path.GetDirectoryName(current);
@@ -596,8 +595,9 @@ namespace McPanel
         {
             TableLayoutPanel stack = NewPage("PASO 2 DE 2  ·  SERVIDOR",
                 "¿Quieres una instalacion con varios servidores?",
-                "Podemos guardar tus proyectos dentro de " + ServerProjects.Root +
-                ". Asi podras cambiar de servidor en cualquier momento desde la barra de titulo.");
+                string.Format(LanguageService.T("Podemos guardar tus proyectos dentro de {0}. " +
+                    "Asi podras cambiar de servidor en cualquier momento desde la barra de titulo."),
+                    ServerProjects.Root));
 
             RoundButton yes = MakePrimary("SI, ORGANIZAR MIS SERVIDORES", "folder");
             yes.Click += delegate { Go(Step.Move); };
@@ -612,8 +612,9 @@ namespace McPanel
         {
             TableLayoutPanel stack = NewPage("PASO 2 DE 2  ·  SERVIDOR",
                 "Mueve tu servidor a RaizServer",
-                "Se movera la carpeta completa (mundo, plugins, configuracion y server.jar) a " +
-                ServerProjects.Root + ". Despues podras agregar mas servidores ahi.");
+                string.Format(LanguageService.T("Se movera la carpeta completa (mundo, plugins, " +
+                    "configuracion y server.jar) a {0}. Despues podras agregar mas servidores ahi."),
+                    ServerProjects.Root));
 
             InputBox source = AddPathField(stack, "CARPETA ACTUAL DEL SERVIDOR", _existingSource,
                 @"Ej: C:\Servers\Casual", true, delegate(string chosen)
@@ -692,12 +693,12 @@ namespace McPanel
                 move.Enabled = false;
                 _back.Enabled = false;
                 status.Visible = true;
-                status.Text = "Moviendo servidor...";
+                status.Text = LanguageService.T("Moviendo servidor...");
                 try
                 {
                     await Task.Run(delegate { MoveDirectory(from, target); });
                     SaveConfig(target, serverName, null, null);
-                    _lastSummary = "Servidor importado en:\r\n" + target;
+                    _lastSummary = LanguageService.T("Servidor importado en:") + "\r\n" + target;
                     Go(Step.Completion);
                 }
                 catch (Exception ex)
@@ -736,7 +737,7 @@ namespace McPanel
                 }
                 string name = Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
                 SaveConfig(folder, name, null, null);
-                _lastSummary = "Servidor actual:\r\n" + folder;
+                _lastSummary = LanguageService.T("Servidor actual:") + "\r\n" + folder;
                 Go(Step.Completion);
             };
             Add(stack, use);
@@ -746,8 +747,9 @@ namespace McPanel
         {
             TableLayoutPanel stack = NewPage("PASO 2 DE 2  ·  SERVIDOR",
                 "Crea tu primer servidor",
-                "Se creara una carpeta dentro de RaizServer (" + ServerProjects.Root +
-                "). Elegimos la version, descargamos el server.jar y preparamos el EULA.");
+                string.Format(LanguageService.T("Se creara una carpeta dentro de RaizServer ({0}). " +
+                    "Elegimos la version, descargamos el server.jar y preparamos el EULA."),
+                    ServerProjects.Root));
 
             InputBox name = AddField(stack, "NOMBRE DEL SERVIDOR (CARPETA)", "Survival", "Ej: Survival");
 
@@ -857,7 +859,7 @@ namespace McPanel
             if (combo == null || combo.IsDisposed || status == null || status.IsDisposed) return;
             int request = ++_versionsRequest;
             status.Visible = true;
-            status.Text = "Consultando versiones de Minecraft...";
+            status.Text = LanguageService.T("Consultando versiones de Minecraft...");
             try
             {
                 JarProvider provider = JarCatalog.GetVanillaProvider(false);
@@ -876,18 +878,20 @@ namespace McPanel
                 }
                 else
                 {
-                    combo.SetItems(new string[] { "Sin versiones disponibles" }, "Sin versiones disponibles");
-                    status.Text = "No se encontraron versiones. Revisa tu conexion.";
+                    combo.SetItems(new string[] { LanguageService.T("Sin versiones disponibles") },
+                        LanguageService.T("Sin versiones disponibles"));
+                    status.Text = LanguageService.T("No se encontraron versiones. Revisa tu conexion.");
                     retry.Visible = true;
                 }
             }
             catch (Exception ex)
             {
                 if (request != _versionsRequest || combo.IsDisposed) return;
-                combo.SetItems(new string[] { "Error de conexion" }, "Error de conexion");
+                combo.SetItems(new string[] { LanguageService.T("Error de conexion") },
+                    LanguageService.T("Error de conexion"));
                 combo.Enabled = false;
                 status.Visible = true;
-                status.Text = "No se pudieron cargar las versiones: " + ex.Message;
+                status.Text = LanguageService.T("No se pudieron cargar las versiones: ") + ex.Message;
                 retry.Visible = true;
             }
         }
@@ -920,7 +924,7 @@ namespace McPanel
             _back.Enabled = false;
             progress.Visible = true;
             status.Visible = true;
-            SetProgress(progress, status, 0, "Preparando descarga...");
+            SetProgress(progress, status, 0, LanguageService.T("Preparando descarga..."));
 
             try
             {
@@ -932,12 +936,13 @@ namespace McPanel
                 if (download == null || string.IsNullOrWhiteSpace(download.Url))
                     throw new Exception("No se pudo obtener la descarga del servidor.");
 
-                SetProgress(progress, status, 0, "Descargando Vanilla " + option.MinecraftVersion + "...");
+                SetProgress(progress, status, 0,
+                    string.Format(LanguageService.T("Descargando Vanilla {0}..."), option.MinecraftVersion));
                 await HttpDownloader.DownloadAsync(download.Url, jarPath, download.Size,
                     download.Hash, download.HashAlgorithm,
                     delegate(double fraction, string text) { SafeProgress(progress, status, fraction, text); },
                     System.Threading.CancellationToken.None);
-                SetProgress(progress, status, 1, "server.jar descargado y verificado.");
+                SetProgress(progress, status, 1, LanguageService.T("server.jar descargado y verificado."));
 
                 int javaMajor = download.JavaMajor;
                 if (javaMajor <= 0)
@@ -949,15 +954,20 @@ namespace McPanel
                 {
                     if (downloadJava)
                     {
-                        SetProgress(progress, status, 0, "Buscando Java " + javaMajor + "...");
+                        SetProgress(progress, status, 0,
+                            string.Format(LanguageService.T("Buscando Java {0}..."), javaMajor));
                         JavaAsset asset = await JavaRuntimeManager.GetAssetAsync(javaMajor);
                         if (asset == null)
-                            throw new Exception("No se encontro un JDK " + javaMajor + " para Windows x64.");
-                        status.Text = "Descargando Java " + javaMajor + " (" + Utils.HumanBytes(asset.Size) + ")...";
+                            throw new Exception(string.Format(
+                                LanguageService.T("No se encontro un JDK {0} para Windows x64."), javaMajor));
+                        status.Text = string.Format(
+                            LanguageService.T("Descargando Java {0} ({1})..."),
+                            javaMajor, Utils.HumanBytes(asset.Size));
                         await JavaRuntimeManager.DownloadAsync(asset,
                             delegate(double fraction, string text) { SafeProgress(progress, status, fraction, text); },
                             System.Threading.CancellationToken.None);
-                        SetProgress(progress, status, 1, "Java " + javaMajor + " instalado.");
+                        SetProgress(progress, status, 1,
+                            string.Format(LanguageService.T("Java {0} instalado."), javaMajor));
                     }
                     else
                     {
@@ -969,8 +979,8 @@ namespace McPanel
 
                 WriteInitialFiles(target, serverName, javaMajor, option.MinecraftVersion);
                 SaveConfig(target, serverName, option, download);
-                _lastSummary = "Servidor: " + serverName + "\r\n" +
-                    "Carpeta: " + target + "\r\n" +
+                _lastSummary = LanguageService.T("Servidor:") + " " + serverName + "\r\n" +
+                    LanguageService.T("Carpeta:") + " " + target + "\r\n" +
                     "Minecraft: " + option.MinecraftVersion + " (Vanilla)\r\n" +
                     "Playit.GG: " + _playitPath;
                 Go(Step.Completion);
@@ -986,7 +996,7 @@ namespace McPanel
                 }
                 catch { }
                 MessageDialog.Info(this, "Crear servidor", ex.Message);
-                SetProgress(progress, status, 0, "No se pudo completar la creacion del servidor.");
+                SetProgress(progress, status, 0, LanguageService.T("No se pudo completar la creacion del servidor."));
             }
             finally
             {

@@ -983,6 +983,11 @@ namespace McPanel
         private static int Show(IWin32Window owner, string title, string message, string primary, string secondary, string tertiary, bool danger)
         {
             int result = 2;
+            title = LanguageService.T(title);
+            message = LanguageService.T(message);
+            primary = LanguageService.T(primary);
+            secondary = LanguageService.T(secondary);
+            tertiary = LanguageService.T(tertiary);
             using (Form f = new Form())
             {
                 f.Text = title;
