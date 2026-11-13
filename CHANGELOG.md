@@ -4,7 +4,7 @@ Todas las versiones relevantes de Orthanc Mc. El formato sigue
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y la versionado
 [SemVer](https://semver.org/lang/es/).
 
-## [1.0.1] - 2026-11-12
+## [1.1] - 2026-11-12
 
 ### Anadido
 
