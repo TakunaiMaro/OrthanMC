@@ -17,11 +17,14 @@ El proyecto esta desarrollado principalmente en español; Puedes cambiar entre e
   jugadores conectados y estado de Playit.
 - **Consola**: Comandos y funciones de Admin del server.
 - **Copias de seguridad**: Posibilidad de realizar Backup manuales y automáticas del mundo o de jugadores.
+- **Resets automaticos**: reinicio ciclico cada 1, 2, 3, 4, 6, 8, 12, 24, 48 o
+  72 horas, con backup previo, avisos a los jugadores por la action bar
+  (10 min, 5 min, 1 min, 30 s y 5 a 1 s) y parada y arranque automaticos. La
+  cuenta atras solo corre con el servidor iniciado desde el panel.
 - **Versiones**: instalacion de Vanilla, Snapshots, Paper, Purpur, Forge,
   NeoForge y Fabric desde el propio panel, el sistema identifica automáticamente que versión de Java necesitas y si no la tienes, la instala si lo permites.
 - **Plugins y mods**: activar/desactivar archivos `.jar` sin salir de la app.
-- **Temas**: Default, Overworld, Nether, End y panoramas personalizados (En desarrollo)
-  (`.zip` con `panorama_0` a `panorama_5`).
+- **Temas**: Default, Overworld, Nether y End.
 - **Idiomas**: espanol e ingles, con archivos JSON editables y puedes añadir los que quieras.
 - **Actualizaciones**: comprueba la ultima release publicada en GitHub y
   ofrece el enlace de descarga.
@@ -30,6 +33,9 @@ El proyecto esta desarrollado principalmente en español; Puedes cambiar entre e
 
 - **Backup en la nube**: la tarjeta aparece como *Proximamente*. La validacion
   de proveedores y la subida real todavia no estan disponibles, para no depender del almacenamiento fisico.
+- **Panoramas personalizados** (tema *Custom Panorama*): aparece como
+  *Proximamente*. Su rotacion y escalado continuo resultan demasiado pesados;
+  el codigo se conserva para una version futura.
 
 ## Requisitos
 
