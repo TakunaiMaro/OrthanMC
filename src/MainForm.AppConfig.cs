@@ -221,8 +221,9 @@ namespace McPanel
 
             Label rightTitle = MakeLabel("TEMAS", Fonts.UI(11f, FontStyle.Bold), Palette.Text);
             Label rightDesc = MakeWrapLabel(
-                "Selecciona un tema. Overworld/Nether/End solo cambian colores, nada mas.",
-                Fonts.UI(9f), Palette.Muted, Dp(38));
+                "Selecciona un tema. Overworld/Nether/End solo cambian colores. " +
+                "Las panoramicas custom llegaran en una proxima version.",
+                Fonts.UI(9f), Palette.Muted, Dp(52));
             rightDesc.Margin = new Padding(0, Dp(4), 0, Dp(10));
 
             _appPanoPreview = new PanoramaRenderer();
@@ -269,12 +270,14 @@ namespace McPanel
             AddThemeItem("OVERWORLD", AppTheme.Overworld);
             AddThemeItem("NETHER", AppTheme.Nether);
             AddThemeItem("END", AppTheme.End);
-            AddThemeItem("PANORAMICAS CUSTOM", AppTheme.CustomPanorama);
+            // Las panoramicas custom quedan visibles pero deshabilitadas hasta
+            // que su rendimiento este resuelto.
+            AddThemeItem("PANORAMICAS", AppTheme.CustomPanorama, true);
             SelectAppTheme(ThemeManager.Current, false);
             return p;
         }
 
-        private void AddThemeItem(string text, AppTheme theme)
+        private void AddThemeItem(string text, AppTheme theme, bool disabled = false)
         {
             NavButton button = new NavButton();
             button.Text = text;
@@ -282,12 +285,15 @@ namespace McPanel
             button.Height = Dp(44);
             button.Margin = new Padding(0, Dp(3), 0, Dp(3));
             button.Tag = theme;
-            button.Click += delegate { SelectAppTheme(theme, true); };
+            button.Disabled = disabled;
+            if (!disabled) button.Click += delegate { SelectAppTheme(theme, true); };
             _appThemeList.Controls.Add(button);
         }
 
         private void SelectAppTheme(AppTheme theme, bool applyPreview)
         {
+            // La vista previa de panoramicas esta deshabilitada por ahora.
+            if (theme == AppTheme.CustomPanorama) return;
             _appThemeSelected = theme;
             if (_appThemeList != null)
             {
@@ -299,16 +305,6 @@ namespace McPanel
                 }
             }
 
-            bool custom = theme == AppTheme.CustomPanorama;
-            if (_appThemePanoramaButton != null)
-                _appThemePanoramaButton.Visible = custom;
-            if (_appPanoPreview != null)
-            {
-                _appPanoPreview.Visible = custom && ThemeManager.CurrentPanorama != null &&
-                    ThemeManager.CurrentPanorama.HasImages;
-                if (_appPanoPreview.Visible)
-                    _appPanoPreview.SetLayer(ThemeManager.CurrentPanorama);
-            }
             if (applyPreview)
             {
                 ThemeManager.Apply(theme, ThemeManager.CurrentPanorama);
@@ -318,6 +314,7 @@ namespace McPanel
 
         private void SaveAppTheme()
         {
+            if (_appThemeSelected == AppTheme.CustomPanorama) return;
             try
             {
                 ThemeManager.Apply(_appThemeSelected, ThemeManager.CurrentPanorama);

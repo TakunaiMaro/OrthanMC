@@ -42,6 +42,13 @@ namespace McPanel
         public int BackupRetention { get; set; } = 5;
         public DateTime? LastBackupUtc { get; set; }
 
+        // Resets automaticos: reinicio ciclico con backup previo. Se guarda la
+        // hora del proximo reset para que el ciclo sobreviva al reinicio de la app.
+        public bool ResetEnabled { get; set; }
+        public int ResetIntervalMinutes { get; set; } = 360;
+        public DateTime? NextResetUtc { get; set; }
+        public DateTime? LastResetUtc { get; set; }
+
         // Metadatos del ultimo server.jar instalado desde el panel.
         public string InstalledJarProvider { get; set; }
         public string InstalledJarVersion { get; set; }

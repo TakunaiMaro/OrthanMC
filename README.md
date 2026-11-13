@@ -20,13 +20,14 @@ espanol e ingles.
   jugadores conectados y estado de Playit.
 - **Consola**: comandos con historial y autocompletado.
 - **Copias de seguridad**: manuales y automaticas del mundo o de jugadores.
+- **Resets automaticos**: reinicio ciclico cada 1, 2, 3, 4, 6, 8, 12, 24, 48 o
+  72 horas. Hace un backup previo, avisa a los jugadores por la action bar
+  (10 min, 5 min, 1 min, 30 s y 5 a 1 s) y detiene y vuelve a iniciar el
+  servidor. La cuenta atras solo corre con el servidor iniciado desde el panel.
 - **Versiones**: instalacion de Vanilla, Snapshots, Paper, Purpur, Forge,
   NeoForge y Fabric desde el propio panel.
 - **Plugins y mods**: activar/desactivar archivos `.jar` sin salir de la app.
-- **Temas**: Default, Overworld, Nether, End y panoramas personalizados
-  (`.zip` con `panorama_0` a `panorama_5`). Con un panorama personalizado el
-  fondo gira lentamente sobre su eje, como el menu de Minecraft, y mantiene el
-  centro al cambiar de seccion o redimensionar la ventana.
+- **Temas**: Default, Overworld, Nether y End.
 - **Idiomas**: espanol e ingles, con archivos JSON editables. El asistente
   inicial usa el idioma de Windows (o ingles si es otro) y permite cambiarlo.
 - **Actualizaciones**: comprueba la ultima release publicada en GitHub y
@@ -36,6 +37,9 @@ espanol e ingles.
 
 - **Backup en la nube**: la tarjeta aparece como *Proximamente*. La validacion
   de proveedores y la subida real todavia no estan disponibles.
+- **Panoramas personalizados** (tema *Custom Panorama*): aparece como
+  *Proximamente*. La rotacion y el escalado continuo del panorama resultan
+  demasiado pesados; el codigo se conserva para una version futura.
 
 ## Requisitos
 
@@ -63,8 +67,7 @@ espanol e ingles.
    - ofrece instalar el Java necesario para arrancar el servidor;
    - pide aceptar el EULA de Minecraft.
 
-La configuracion y los panoramas personalizados se guardan en
-`%AppData%\McPanel`.
+La configuracion se guarda en `%AppData%\McPanel`.
 
 ## Compilar en local
 

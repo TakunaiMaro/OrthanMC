@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable disable
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -23,6 +24,13 @@ namespace McPanel
 
         public static void Apply(AppTheme theme, PanoramaLayer layer)
         {
+            // Las panoramicas custom estan deshabilitadas temporalmente por
+            // rendimiento: cualquier intento de aplicarlas cae en Default.
+            if (theme == AppTheme.CustomPanorama)
+            {
+                theme = AppTheme.Default;
+                layer = null;
+            }
             Current = theme;
             CurrentPanorama = layer;
             // El fondo compuesto depende del panorama y de la paleta: se

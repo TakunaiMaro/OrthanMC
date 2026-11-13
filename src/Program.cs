@@ -60,13 +60,15 @@ namespace McPanel
                     if (!string.IsNullOrWhiteSpace(savedTheme))
                     {
                         AppTheme theme = (AppTheme)Enum.Parse(typeof(AppTheme), savedTheme, true);
-                        // Si el tema es CustomPanorama se reconstruye el
-                        // panorama guardado para que no arranque vacio.
-                        PanoramaLayer layer = theme == AppTheme.CustomPanorama
-                            ? CustomPanoramaStore.LoadSaved()
-                            : null;
-                        if (theme != AppTheme.CustomPanorama || layer != null)
-                            ThemeManager.Apply(theme, layer);
+                        // Las panoramicas custom quedan deshabilitadas por
+                        // ahora: se vuelve a Default y se guarda la migracion.
+                        if (theme == AppTheme.CustomPanorama)
+                        {
+                            theme = AppTheme.Default;
+                            AppConfig.Instance.Theme = "default";
+                            AppConfig.Instance.Save();
+                        }
+                        ThemeManager.Apply(theme, null);
                     }
                 }
                 catch { }

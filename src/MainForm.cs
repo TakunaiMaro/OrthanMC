@@ -290,6 +290,8 @@ namespace McPanel
             _viewConfigRam = MakeConfigSection(_viewConfig, "RAM, Server.properties y icono");
             _viewBackupsHost = MakeConfigSection(_viewBackups, "Copias de seguridad");
             _viewVersionsHost = MakeConfigSection(_viewVersions, "Versiones del servidor");
+            _viewResets = BuildResets();
+            _viewResetsHost = MakeConfigSection(_viewResets, "Resets automaticos");
             BuildAppConfigViews();
             _viewStatus.Dock = DockStyle.Fill;
             _viewConsole.Dock = DockStyle.Fill;
@@ -298,12 +300,14 @@ namespace McPanel
             _viewConfigRam.Dock = DockStyle.Fill;
             _viewBackupsHost.Dock = DockStyle.Fill;
             _viewVersionsHost.Dock = DockStyle.Fill;
+            _viewResetsHost.Dock = DockStyle.Fill;
             _viewConsole.Visible = false;
             _viewAddons.Visible = false;
             _viewConfigHub.Visible = false;
             _viewConfigRam.Visible = false;
             _viewBackupsHost.Visible = false;
             _viewVersionsHost.Visible = false;
+            _viewResetsHost.Visible = false;
             _content.Controls.Add(_viewStatus);
             _content.Controls.Add(_viewConsole);
             _content.Controls.Add(_viewAddons);
@@ -311,6 +315,7 @@ namespace McPanel
             _content.Controls.Add(_viewConfigRam);
             _content.Controls.Add(_viewBackupsHost);
             _content.Controls.Add(_viewVersionsHost);
+            _content.Controls.Add(_viewResetsHost);
             _viewStatus.BringToFront();
 
             main.Controls.Add(_header, 0, 0);
@@ -884,6 +889,7 @@ namespace McPanel
             order.Add(4);
             order.Add(5);
             order.Add(6);
+            order.Add(12);
             order.Add(7);
             order.Add(8);
             order.Add(10);
@@ -1964,10 +1970,11 @@ namespace McPanel
             stack.Padding = new Padding(0);
             stack.BackColor = Color.Transparent;
             stack.ColumnCount = 1;
-            stack.RowCount = 6;
+            stack.RowCount = 7;
             stack.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
             stack.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             stack.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            stack.RowStyles.Add(new RowStyle(SizeType.Absolute, Dp(100)));
             stack.RowStyles.Add(new RowStyle(SizeType.Absolute, Dp(100)));
             stack.RowStyles.Add(new RowStyle(SizeType.Absolute, Dp(100)));
             stack.RowStyles.Add(new RowStyle(SizeType.Absolute, Dp(100)));
@@ -1997,6 +2004,14 @@ namespace McPanel
             _cfgEntryVersions.Margin = new Padding(0);
             _cfgEntryVersions.Click += delegate { NavigateTo(6); };
 
+            _cfgEntryResets = new ConfigEntry();
+            _cfgEntryResets.Title = "Resets automaticos";
+            _cfgEntryResets.Description = "Reinicia el servidor cada cierto tiempo con avisos y backup previo.";
+            _cfgEntryResets.Glyph = "restart";
+            _cfgEntryResets.Dock = DockStyle.Fill;
+            _cfgEntryResets.Margin = new Padding(0);
+            _cfgEntryResets.Click += delegate { NavigateTo(12); };
+
             Label hint = MakeWrapLabel(
                 "Los cambios de RAM, server.properties y server.jar se aplican al iniciar el servidor. " +
                 "Las copias de seguridad y las versiones viven ahora dentro de esta seccion.",
@@ -2006,7 +2021,8 @@ namespace McPanel
             stack.Controls.Add(_cfgEntryRam, 0, 2);
             stack.Controls.Add(_cfgEntryBackups, 0, 3);
             stack.Controls.Add(_cfgEntryVersions, 0, 4);
-            stack.Controls.Add(hint, 0, 5);
+            stack.Controls.Add(_cfgEntryResets, 0, 5);
+            stack.Controls.Add(hint, 0, 6);
             p.Controls.Add(stack);
             return p;
         }
@@ -2213,8 +2229,8 @@ namespace McPanel
             _navStatus.Active = idx == 0;
             _navConsole.Active = idx == 1;
             _navAddons.Active = idx == 2;
-            _navConfig.Active = idx >= 3 && idx <= 6;
-            if (_navApp != null) _navApp.Active = idx >= 7;
+            _navConfig.Active = (idx >= 3 && idx <= 6) || idx == 12;
+            if (_navApp != null) _navApp.Active = idx >= 7 && idx <= 11;
             if (_navProfiles != null) _navProfiles.Active = false;
 
             _viewStatus.Visible = idx == 0;
@@ -2224,6 +2240,7 @@ namespace McPanel
             _viewConfigRam.Visible = idx == 4;
             _viewBackupsHost.Visible = idx == 5;
             _viewVersionsHost.Visible = idx == 6;
+            if (_viewResetsHost != null) _viewResetsHost.Visible = idx == 12;
             if (_viewAppConfigHub != null) _viewAppConfigHub.Visible = idx == 7;
             if (_viewAppTheme != null) _viewAppTheme.Visible = idx == 8;
             if (_viewCloudBackup != null) _viewCloudBackup.Visible = idx == 9;
@@ -2279,6 +2296,13 @@ namespace McPanel
                 LoadVersionList();
                 _pageTitle.Text = LanguageService.T("Configuracion del Servidor");
                 _pageSub.Text = LanguageService.T("Cambiar server.jar (Vanilla, Snapshots, Plugins, Modded)");
+            }
+            else if (idx == 12)
+            {
+                _viewResetsHost.BringToFront();
+                UpdateResetStatus(true);
+                _pageTitle.Text = LanguageService.T("Configuracion del Servidor");
+                _pageSub.Text = LanguageService.T("Reinicios programados con aviso y backup previo");
             }
             else if (idx == 7)
             {
@@ -2402,6 +2426,7 @@ namespace McPanel
                         _toast.ShowMessage("No se pudo iniciar el servidor", Palette.Red, "warning");
                         return;
                     }
+                    ResetOnServerStarted();
                     _toast.ShowMessage("Servidor iniciando", Palette.Accent, "play");
                 });
             });
@@ -2541,6 +2566,7 @@ namespace McPanel
         private void Tick_Tick(object sender, EventArgs e)
         {
             TrackProfileHours();
+            ResetTick();
             if (_statusBusy) return;
 
             string latestLog = _paths.LatestLog;

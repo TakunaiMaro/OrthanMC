@@ -309,7 +309,7 @@ namespace McPanel
 
         private void BackupTick(bool serverOnline)
         {
-            if (_backupLoading || _backupRunning || _versionBusy) return;
+            if (_backupLoading || _backupRunning || _versionBusy || _resetRunning) return;
             AppConfig cfg = AppConfig.Instance;
             if (!cfg.BackupEnabled) return;
 
@@ -328,7 +328,17 @@ namespace McPanel
 
         private async void StartBackup(bool automatic)
         {
-            if (_backupRunning || _versionBusy) return;
+            await RunBackupAsync(automatic, false);
+        }
+
+        // Ejecuta una copia y devuelve si termino bien. StartBackup lo usa
+        // para el boton y el ciclo automatico; el reset programado lo espera
+        // antes de detener el servidor con fromReset = true.
+        private async System.Threading.Tasks.Task<bool> RunBackupAsync(bool automatic, bool fromReset)
+        {
+            // Durante un reset solo se permite el backup que dispara el propio
+            // reset; el temporizador de backups debe esperar.
+            if (_backupRunning || _versionBusy || (_resetRunning && !fromReset)) return false;
 
             AppConfig cfg = AppConfig.Instance;
             string mode = cfg.BackupMode == "players" ? "players" : "world";
@@ -387,6 +397,9 @@ namespace McPanel
                     _toast.ShowMessage("Copia completada", Palette.Accent, "check");
                 }
                 AnnounceBackup(next);
+                RefreshBackupHistory();
+                UpdateBackupStatus(true);
+                return true;
             }
             else
             {
@@ -402,6 +415,7 @@ namespace McPanel
 
             RefreshBackupHistory();
             UpdateBackupStatus(true);
+            return false;
         }
 
         private void SafeBackupProgress(double fraction, string text)

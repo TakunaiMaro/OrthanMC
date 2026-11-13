@@ -12,14 +12,14 @@ Todas las versiones relevantes de Orthanc Mc. El formato sigue
   (English / Espanol). La pregunta se muestra en el idioma de Windows: espanol
   si el sistema esta en espanol, ingles en cualquier otro caso. Elegir un
   idioma traduce el resto del asistente.
+- **Resets automaticos** en *Configuracion del Servidor*: reinicio ciclico
+  cada 1, 2, 3, 4, 6, 8, 12, 24, 48 o 72 horas. Antes del reinicio se crea un
+  backup, se avisa a los jugadores por la action bar y el servidor se detiene y
+  vuelve a iniciar solo. La cuenta atras muestra el tiempo restante, el proximo
+  aviso y el ultimo reset, y solo corre mientras el servidor esta iniciado
+  desde el panel.
 
 ### Cambiado
-
-- El fondo del tema **Custom Panorama** gira de forma continua sobre su eje
-  como el menu de Minecraft, con el mismo centro y orientacion al cambiar de
-  seccion. Al redimensionar la ventana se reutiliza una version ya escalada y
-  el panorama se reconstruye una sola vez al terminar, sin reescalar la imagen
-  original en cada evento.
 
 - El asistente ya no pregunta el nickname de admin: no se usaba en ninguna
   parte de la app. La configuracion lo conserva solo por compatibilidad.
@@ -31,12 +31,12 @@ Todas las versiones relevantes de Orthanc Mc. El formato sigue
 - El empaquetado incluye `themes/` y los iconos como archivos externos
   (`ExcludeFromSingleFile`), que antes se perdian en modo single-file.
 
-### Corregido
+### Deshabilitado
 
-- El fondo del tema **Custom Panorama** ahora se aplica de verdad: se compone
-  el panorama con un velo oscuro y se pinta detras de toda la interfaz. Los
-  controles con esquinas redondeadas reciben el recorte correspondiente para
-  que no queden parches del color plano anterior.
+- El tema **Custom Panorama** (panoramas personalizados) aparece como
+  *Proximamente* y no se puede seleccionar: su rotacion y escalado continuo
+  resultan demasiado pesados. El codigo se conserva para una version futura y
+  las configuraciones existentes vuelven al tema Default.
 
 ## [1.0.0] - 2026-11-10
 

@@ -280,6 +280,7 @@ namespace McPanel
     {
         private bool _hover;
         private bool _active;
+        private bool _disabled;
         private string _glyph = "pulse";
 
         public NavButton()
@@ -296,7 +297,23 @@ namespace McPanel
         public bool Active { get { return _active; } set { _active = value; Invalidate(); } }
         public string Glyph { get { return _glyph; } set { _glyph = value; Invalidate(); } }
 
-        protected override void OnMouseEnter(EventArgs e) { _hover = true; Invalidate(); base.OnMouseEnter(e); }
+        // Entrada no disponible: se muestra atenuada con la etiqueta
+        // PROXIMAMENTE y no responde a clics ni al teclado.
+        public bool Disabled
+        {
+            get { return _disabled; }
+            set
+            {
+                _disabled = value;
+                Enabled = !value;
+                Cursor = value ? Cursors.Default : Cursors.Hand;
+                TabStop = !value;
+                _hover = false;
+                Invalidate();
+            }
+        }
+
+        protected override void OnMouseEnter(EventArgs e) { if (_disabled) return; _hover = true; Invalidate(); base.OnMouseEnter(e); }
         protected override void OnMouseLeave(EventArgs e) { _hover = false; Invalidate(); base.OnMouseLeave(e); }
         protected override void OnGotFocus(EventArgs e) { Invalidate(); base.OnGotFocus(e); }
         protected override void OnLostFocus(EventArgs e) { Invalidate(); base.OnLostFocus(e); }
@@ -313,23 +330,34 @@ namespace McPanel
             Color parent = Palette.Backdrop(this, Palette.Sidebar);
             Palette.PaintBackdrop(g, this, parent);
 
-            if (_active || _hover)
+            if (!_disabled && (_active || _hover))
             {
                 RectangleF bg = new RectangleF(8f, 4f, Width - 16f, Height - 8f);
                 Draw.FillRound(g, bg, 9f, _active ? Palette.Card : Palette.Mix(parent, Color.White, 0.045f));
             }
-            if (_active)
+            if (!_disabled && _active)
             {
                 RectangleF bar = new RectangleF(0f, (Height - 22f) / 2f, 3f, 22f);
                 Draw.FillRound(g, bar, 1.5f, Palette.Accent);
             }
 
-            Color fg = _active ? Palette.Text : (_hover ? Palette.Text : Palette.Muted);
+            Color fg = _disabled ? Palette.Dim
+                : (_active ? Palette.Text : (_hover ? Palette.Text : Palette.Muted));
             RectangleF gr = new RectangleF(22f, (Height - 19f) / 2f, 19f, 19f);
-            Draw.Glyph(g, _glyph, gr, _active ? Palette.Accent : fg, 1.7f);
-            RectangleF tr = new RectangleF(52f, 0f, Width - 60f, Height);
+            Draw.Glyph(g, _glyph, gr, _disabled ? Palette.Dim : (_active ? Palette.Accent : fg), 1.7f);
+            RectangleF tr = new RectangleF(52f, 0f, Width - (_disabled ? 166f : 60f), Height);
             TextRenderer.DrawText(g, Text, Font, Rectangle.Round(tr), fg,
                 TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.NoPadding | TextFormatFlags.NoPrefix);
+
+            if (_disabled)
+            {
+                RectangleF pill = new RectangleF(Width - 112f, (Height - 20f) / 2f, 104f, 20f);
+                Draw.FillRound(g, pill, 10f, Palette.Mix(Palette.CardAlt, Palette.Bg, 0.25f));
+                TextRenderer.DrawText(g, LanguageService.T("PROXIMAMENTE"), Fonts.UI(7f, FontStyle.Bold),
+                    Rectangle.Round(pill), Palette.Dim,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
+                    TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+            }
             if (Focused && ShowFocusCues)
             {
                 RectangleF fr = new RectangleF(8f, 4f, Width - 16f, Height - 8f);
@@ -831,7 +859,7 @@ namespace McPanel
             {
                 RectangleF pill = new RectangleF(Width - 132f, 13f, 116f, 22f);
                 Draw.FillRound(g, pill, 11f, Palette.Mix(Palette.CardAlt, Palette.Bg, 0.25f));
-                TextRenderer.DrawText(g, "PROXIMAMENTE", Fonts.UI(7.5f, FontStyle.Bold),
+                TextRenderer.DrawText(g, LanguageService.T("PROXIMAMENTE"), Fonts.UI(7.5f, FontStyle.Bold),
                     Rectangle.Round(pill), Palette.Dim,
                     TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
                     TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
