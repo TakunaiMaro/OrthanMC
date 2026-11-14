@@ -93,7 +93,8 @@ namespace McPanel
             Label sequence = MakeWrapLabel(
                 "Al llegar la hora: se crea un backup, se detiene el servidor y se vuelve a iniciar. " +
                 "Los jugadores reciben avisos en la action bar a los 10 min, 5 min, 1 min, 30 s " +
-                "y en la cuenta atras de 5 a 1 segundo.",
+                "y en la cuenta atras de 5 a 1 segundo. Los avisos de 10 y 5 minutos tambien se " +
+                "envian por el chat.",
                 Fonts.UI(8.5f), Palette.Dim, Dp(56));
 
             Label sep = new Label();
@@ -147,7 +148,7 @@ namespace McPanel
 
             _resetWarning = MakeLabel("Proximo aviso: --", Fonts.UI(9f), Palette.Muted);
 
-            Label wtitle = MakeLabel("AVISOS EN LA ACTION BAR", Fonts.UI(8.5f, FontStyle.Bold), Palette.Dim);
+            Label wtitle = MakeLabel("AVISOS A LOS JUGADORES", Fonts.UI(8.5f, FontStyle.Bold), Palette.Dim);
             wtitle.Margin = new Padding(0, Dp(18), 0, Dp(6));
 
             right.Controls.Add(stitle, 0, 0);
@@ -358,7 +359,19 @@ namespace McPanel
             string text = "Reinicio en " + ResetWarningLabel(chosen);
             string json = "{\"text\":\"" + text + "\",\"color\":\"" + color + "\",\"bold\":true}";
             _bridge.Send("title @a actionbar " + json);
-            AppendConsole("[PANEL] Aviso de reset enviado: " + text + ".");
+
+            // Los avisos de 10 y 5 minutos se refuerzan ademas en el chat
+            // para que no se pierdan si el jugador no mira la action bar.
+            bool chat = chosen == 600 || chosen == 300;
+            if (chat)
+            {
+                string chatJson = "{\"text\":\"[Orthanc Mc] " + text +
+                    "\",\"color\":\"" + color + "\"}";
+                _bridge.Send("tellraw @a " + chatJson);
+            }
+
+            AppendConsole("[PANEL] Aviso de reset enviado: " + text +
+                (chat ? " (action bar y chat)." : "."));
             _resetLastWarning = chosen;
         }
 
@@ -548,7 +561,7 @@ namespace McPanel
                 ? LanguageService.T("Proximo aviso: ") + LanguageService.T(ResetWarningLabel(nextWarn))
                 : LanguageService.T("Reinicio inminente");
             _resetHint.Text = LanguageService.T(
-                "Avisos por action bar y backup automatico antes del reinicio.");
+                "Avisos por action bar y chat: 10 y 5 minutos. Backup automatico antes del reinicio.");
         }
     }
 }

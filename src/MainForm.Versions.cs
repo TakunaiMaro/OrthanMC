@@ -13,7 +13,7 @@ namespace McPanel
     public partial class MainForm
     {
         private static readonly string[] VersionChannels = { "Vanilla", "Snapshots", "Plugins", "Modded" };
-        private static readonly string[] VersionPluginProviders = { "Paper", "Purpur" };
+        private static readonly string[] VersionPluginProviders = { "Paper", "Folia", "Purpur" };
         // El selector usa los nombres pedidos; el nombre visible del proveedor
         // sigue siendo NeoForge/Forge/Fabric en las etiquetas.
         private static readonly string[] VersionModProviders = { "neoforged", "forge", "fabric" };
@@ -115,7 +115,7 @@ namespace McPanel
             _verLastInstall = MakeWrapLabel("Ultimo cambio desde el panel: --", Fonts.UI(8.5f), Palette.Dim, Dp(34));
 
             Label note = MakeWrapLabel(
-                "Compatible con Vanilla, Snapshots, Paper, Purpur, Fabric, Forge y NeoForge. " +
+                "Compatible con Vanilla, Snapshots, Paper, Purpur, Folia, Fabric, Forge y NeoForge. " +
                 "Forge y NeoForge se instalan con su instalador oficial.",
                 Fonts.UI(8.25f), Palette.Dim, Dp(52));
 
@@ -492,6 +492,7 @@ namespace McPanel
             if (java > 0) text += "   |   Java requerido: " + java;
             else text += "   |   Java se detectara al descargar";
             if (string.Equals(option.ProviderId, "paper", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(option.ProviderId, "folia", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(option.ProviderId, "purpur", StringComparison.OrdinalIgnoreCase))
                 text += "   |   ultimo build estable";
             else if (string.Equals(option.ProviderId, "forge", StringComparison.OrdinalIgnoreCase) ||
@@ -984,6 +985,7 @@ namespace McPanel
             if (string.Equals(provider, "vanilla", StringComparison.OrdinalIgnoreCase)) return "Vanilla";
             if (string.Equals(provider, "snapshot", StringComparison.OrdinalIgnoreCase)) return "Snapshot";
             if (string.Equals(provider, "paper", StringComparison.OrdinalIgnoreCase)) return "Paper";
+            if (string.Equals(provider, "folia", StringComparison.OrdinalIgnoreCase)) return "Folia";
             if (string.Equals(provider, "purpur", StringComparison.OrdinalIgnoreCase)) return "Purpur";
             if (string.Equals(provider, "fabric", StringComparison.OrdinalIgnoreCase)) return "Fabric";
             if (string.Equals(provider, "forge", StringComparison.OrdinalIgnoreCase)) return "Forge";

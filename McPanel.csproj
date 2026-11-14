@@ -15,9 +15,9 @@
 
     <!-- Version que se muestra y se compara en el sistema de actualizaciones.
          Subirla en cada release y crear el tag vX.Y.Z en GitHub. -->
-    <Version>1.1</Version>
-    <AssemblyVersion>1.1.0.0</AssemblyVersion>
-    <FileVersion>1.1.0.0</FileVersion>
+    <Version>1.2</Version>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <FileVersion>1.2.0.0</FileVersion>
     <Product>Orthanc Mc</Product>
     <Company>TakunaiMaro</Company>
     <Description>Panel de administracion para servidores locales de Minecraft con Playit.</Description>

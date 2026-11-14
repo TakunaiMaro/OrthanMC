@@ -74,6 +74,7 @@ namespace McPanel
     {
         private const string MojangManifest = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
         private const string PaperBase = "https://fill.papermc.io/v3/projects/paper";
+        private const string FoliaBase = "https://fill.papermc.io/v3/projects/folia";
         private const string PurpurBase = "https://api.purpurmc.org/v2/purpur";
         private const string ForgeBase = "https://maven.minecraftforge.net/net/minecraftforge/forge";
         private const string ForgeMeta = ForgeBase + "/maven-metadata.xml";
@@ -116,6 +117,14 @@ namespace McPanel
             paper.List = ListPaperAsync;
             paper.Resolve = ResolvePaperAsync;
             list.Add(paper);
+
+            JarProvider folia = new JarProvider();
+            folia.Id = "folia";
+            folia.Name = "Folia";
+            folia.Channel = "plugin";
+            folia.List = ListFoliaAsync;
+            folia.Resolve = ResolveFoliaAsync;
+            list.Add(folia);
 
             JarProvider purpur = new JarProvider();
             purpur.Id = "purpur";
@@ -218,10 +227,33 @@ namespace McPanel
             }
         }
 
-        public static async Task<List<JarOption>> ListPaperAsync()
+        public static Task<List<JarOption>> ListPaperAsync()
+        {
+            return ListFillProjectAsync(PaperBase, "paper", "Paper");
+        }
+
+        public static Task<JarDownload> ResolvePaperAsync(JarOption option)
+        {
+            return ResolveFillProjectAsync(option, PaperBase, "paper");
+        }
+
+        public static Task<List<JarOption>> ListFoliaAsync()
+        {
+            return ListFillProjectAsync(FoliaBase, "folia", "Folia");
+        }
+
+        public static Task<JarDownload> ResolveFoliaAsync(JarOption option)
+        {
+            return ResolveFillProjectAsync(option, FoliaBase, "folia");
+        }
+
+        // Paper y Folia comparten la API v3 de PaperMC (fill.papermc.io):
+        // el mismo formato de versiones, builds y descargas.
+        private static async Task<List<JarOption>> ListFillProjectAsync(string baseUrl,
+            string providerId, string providerName)
         {
             List<JarOption> list = new List<JarOption>();
-            using (JsonDocument doc = await GetJsonAsync(PaperBase, CancellationToken.None))
+            using (JsonDocument doc = await GetJsonAsync(baseUrl, CancellationToken.None))
             {
                 JsonElement versions = doc.RootElement.GetProperty("versions");
                 HashSet<string> seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -235,8 +267,8 @@ namespace McPanel
                         if (!seen.Add(version)) continue;
 
                         JarOption option = new JarOption();
-                        option.ProviderId = "paper";
-                        option.ProviderName = "Paper";
+                        option.ProviderId = providerId;
+                        option.ProviderName = providerName;
                         option.Channel = "plugin";
                         option.MinecraftVersion = version;
                         list.Add(option);
@@ -246,9 +278,10 @@ namespace McPanel
             return list;
         }
 
-        public static async Task<JarDownload> ResolvePaperAsync(JarOption option)
+        private static async Task<JarDownload> ResolveFillProjectAsync(JarOption option,
+            string baseUrl, string providerId)
         {
-            string url = PaperBase + "/versions/" +
+            string url = baseUrl + "/versions/" +
                 Uri.EscapeDataString(option.MinecraftVersion) + "/builds";
             using (JsonDocument doc = await GetJsonAsync(url, CancellationToken.None))
             {
@@ -269,7 +302,8 @@ namespace McPanel
                     if (!found && chosen.ValueKind == JsonValueKind.Undefined) chosen = build;
                 }
                 if (!found && chosen.ValueKind == JsonValueKind.Undefined)
-                    throw new Exception("Paper no tiene builds para " + option.MinecraftVersion + ".");
+                    throw new Exception(option.ProviderName + " no tiene builds para " +
+                        option.MinecraftVersion + ".");
 
                 JsonElement downloads = chosen.GetProperty("downloads");
                 JsonElement server = default(JsonElement);
@@ -282,12 +316,13 @@ namespace McPanel
                     }
                 }
                 if (server.ValueKind == JsonValueKind.Undefined)
-                    throw new Exception("Paper no publico un jar de servidor para " + option.MinecraftVersion + ".");
+                    throw new Exception(option.ProviderName + " no publico un jar de servidor para " +
+                        option.MinecraftVersion + ".");
 
                 JarDownload d = new JarDownload();
                 d.Option = option;
                 d.Url = GetString(server, "url") ?? "";
-                d.FileName = GetString(server, "name") ?? "paper.jar";
+                d.FileName = GetString(server, "name") ?? (providerId + ".jar");
                 d.Size = GetLong(server, "size");
                 JsonElement checksums;
                 if (server.TryGetProperty("checksums", out checksums))
@@ -735,11 +770,28 @@ namespace McPanel
                             string text = reader.ReadToEnd();
                             string lower = text.ToLowerInvariant();
                             if (lower.Contains("purpur")) meta.Provider = "Purpur";
+                            else if (lower.Contains("folia")) meta.Provider = "Folia";
                             else if (lower.Contains("paperclip") || lower.Contains("papermc"))
                                 meta.Provider = "Paper";
                             else if (lower.Contains("neoforge")) meta.Provider = "NeoForge";
                             else if (lower.Contains("forge")) meta.Provider = "Forge";
                             else if (lower.Contains("fabric")) meta.Provider = "Fabric";
+                        }
+                    }
+
+                    // Folia usa el mismo paperclip que Paper y no lo indica en
+                    // el manifiesto; su API incluida en las librerias lo delata.
+                    if (string.Equals(meta.Provider, "Paper", StringComparison.OrdinalIgnoreCase) ||
+                        string.IsNullOrWhiteSpace(meta.Provider))
+                    {
+                        foreach (ZipArchiveEntry lib in zip.Entries)
+                        {
+                            if (lib.FullName.StartsWith("dev/folia/", StringComparison.OrdinalIgnoreCase) ||
+                                lib.FullName.IndexOf("/dev/folia/", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                meta.Provider = "Folia";
+                                break;
+                            }
                         }
                     }
 
